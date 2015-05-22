@@ -9,19 +9,16 @@ already present in the build tools [Morph] and [YBD]. We want this new library
 to be usable without depending on [linux-user-chroot], so that it can be used
 on Mac OS X, and hopefully other platforms too.
 
-## Copyright
+[Baserock]: http://www.baserock.org/
+[Morph]: http://wiki.baserock.org/Morph/
+[YBD]: https://github.com/devcurmudgeon/ybd/
+[linux-user-chroot]: https://git.gnome.org/browse/linux-user-chroot/tree/
 
-Copyright (C) 2015  Codethink Limited
+# License
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License.
+License is GPLv2 but other licensing can be considered on request
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+Most of the copyright is currently Codethink but don't let that put you off.
+There's no intent to keep this as a Codethink-only project, nor will there be
+any attempt to get folks to sign a contributor agreement. Contributors retain
+their own copyright.
