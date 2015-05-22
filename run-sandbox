@@ -79,7 +79,13 @@ def run():
                 command = manifest['app']['exec']
             else:
                 command = args.command
-            executor.run_sandbox(rootfs_path, command)
+
+            if 'workingDirectory' in manifest['app']:
+                cwd = manifest['app']['workingDirectory']
+            else:
+                cwd = None
+
+            executor.run_sandbox(rootfs_path, command, cwd=cwd)
     else:
         # We should at minimum handle filesystem trees as well.
         raise RuntimeError(

@@ -21,10 +21,19 @@ import subprocess
 import sandboxlib
 
 
-def run_sandbox(rootfs_path, command, extra_env=None):
+def run_sandbox(rootfs_path, command, cwd=None, extra_env=None):
     if type(command) == str:
         command = [command]
-        
+
+    linux_user_chroot = 'linux-user-chroot'
+
+    linux_user_chroot_args = []
+
+    if cwd is not None:
+        linux_user_chroot_args.extend(['--chdir', cwd])
+
     env = sandboxlib.environment_vars(extra_env)
 
-    subprocess.call(['linux-user-chroot', rootfs_path] + command, env=env)
+    argv = (
+        [linux_user_chroot] + linux_user_chroot_args + [rootfs_path] + command)
+    subprocess.call(argv, env=env)
