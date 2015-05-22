@@ -1,0 +1,25 @@
+# Testing that a sandbox conforms to the App Container spec
+
+The [App Container project] provides an 'ace' package containing a
+[validator application for App Container Executors (ACEs)].
+
+If you want to test whether a particular sandbox 'exec' module conforms to the
+App Container spec, try this. You'll need a [golang] compiler available, and you
+might need to set the `GOPATH` environment variable to point to a path where
+you're happy for Go to install dependencies.
+
+First build the `ace-validator-main.aci` and `ace-validator-sidekick.aci` App
+Container images.
+
+    git clone git://github.com/appc/spec appc-spec
+    cd appc-spec
+    appc-spec/ace/build
+
+Then, use the run-sandbox program to run the image:
+
+    run-sandbox appc-spec/ace/build/ace-validator-main.aci
+
+
+[App Container project]: https://github.com/appc/spec
+[validator application for App Container Executors (ACEs)]: https://github.com/appc/spec#validating-app-container-executors-aces
+[golang]: https://golang.org/doc/install

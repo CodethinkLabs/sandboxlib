@@ -13,21 +13,32 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''Execute command in a sandbox, using 'chroot'.'''
+'''sandboxlib module.'''
 
 
-import subprocess
+BASE_ENVIRONMENT = {
+    # Mandated by https://github.com/appc/spec/blob/master/SPEC.md#execution-environment
+    'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+}
 
-import sandboxlib
 
+def environment_vars(extra_env=None):
+    '''Return the complete set of environment variables for a sandbox.
 
-def run_sandbox(rootfs_path, command, extra_env=None):
-    if type(command) == str:
-        command = [command]
+    The base environment is defined above, and callers can add extra variables
+    to this or override the defaults by passing a dict to 'extra_env'.
 
-    env = sandboxlib.BASE_ENVIRONMENT.copy()
+    '''
+    env = BASE_ENVIRONMENT.copy()
+
     if extra_env is not None:
         env.update(extra_env)
 
-    # FIXME: you gotta be root for this one.
-    subprocess.call(['chroot', rootfs_path] + command)
+    return env
+
+
+# Executors
+import sandboxlib.chroot
+import sandboxlib.linux_user_chroot
+
+import sandboxlib.load

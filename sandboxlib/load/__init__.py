@@ -13,21 +13,7 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''Execute command in a sandbox, using 'chroot'.'''
+'''sandboxlib loaders module.'''
 
 
-import subprocess
-
-import sandboxlib
-
-
-def run_sandbox(rootfs_path, command, extra_env=None):
-    if type(command) == str:
-        command = [command]
-
-    env = sandboxlib.BASE_ENVIRONMENT.copy()
-    if extra_env is not None:
-        env.update(extra_env)
-
-    # FIXME: you gotta be root for this one.
-    subprocess.call(['chroot', rootfs_path] + command)
+import sandboxlib.load.appc
