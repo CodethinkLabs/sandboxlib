@@ -13,9 +13,10 @@ Container images.
 
     git clone git://github.com/appc/spec appc-spec
     cd appc-spec
-    appc-spec/ace/build
+    ace/build
+    cd -
 
-Then, use the run-sandbox program to run the image:
+Then, use the `run-sandbox` program from this repository to run the image:
 
     run-sandbox appc-spec/ace/build/ace-validator-main.aci
 
