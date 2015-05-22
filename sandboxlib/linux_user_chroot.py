@@ -13,7 +13,17 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''Execute command in a sandbox, using 'linux-user-chroot'.'''
+'''Execute command in a sandbox, using 'linux-user-chroot'.
+
+This implements an API defined in sandboxlib/__init__.py.
+
+This backend requires the `linux-user-chroot` program. This program is
+Linux-only. It is intended to be a 'setuid', and thus usable by non-'root'
+users that have explicitly been given permission to use it.
+
+Supported network settings: 'undefined', 'isolated'.
+
+'''
 
 
 import subprocess

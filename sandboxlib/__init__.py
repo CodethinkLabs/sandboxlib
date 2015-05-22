@@ -13,7 +13,62 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''sandboxlib module.'''
+'''sandboxlib module.
+
+This module contains multiple 'executor' backends, which must all provide
+the same API. A stub version of the API is defined in this file, with
+docstrings that describe the different parameters.
+
+'''
+
+
+def maximum_possible_isolation():
+    '''Describe the 'tightest' isolation possible with a specific backend.
+
+    This function returns a dict, with the following keys:
+
+      - network
+
+    Each key maps to a parameter of the run_sandbox() function, and each
+    value is a valid value for that parameter.
+
+    Example result:
+
+        {
+            'network': 'isolated'
+        }
+
+    You can pass the result directly to a run_sandbox() function directly,
+    using the `**` operator to turn it into keyword arguments as in the
+    following example:
+
+        isolation_settings = maximum_possible_isolation()
+        run_sandbox(root_path, ['echo', 'hello'], **isolation_settings)
+
+    '''
+    raise NotImplementedError()
+
+
+def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
+                network='undefined'):
+    '''Run 'command' in a sandboxed environment.
+
+    Parameters:
+      - rootfs_path: the path to the root of the sandbox. Can be '/', if you
+            don't want to isolate the command from the host filesystem at all.
+      - command: the command to run. Pass a list of parameters rather than
+            using spaces to separate them, e.g. ['echo', '"Hello world"'].
+      - cwd: the working directory of 'command', relative to 'rootfs_path'.
+            Defaults to '/' if "rootfs_path" is specified, and the current
+            directory of the calling process otherwise.
+      - extra_env: environment variables to set in addition to
+            BASE_ENVIRONMENT.
+      - network: configures network sharing. Defaults to 'undefined', where
+            case no attempt is made to either prevent or provide networking
+            inside the sandbox. Backends may support 'isolated' and/or other
+            values as well.
+
+    '''
 
 
 BASE_ENVIRONMENT = {

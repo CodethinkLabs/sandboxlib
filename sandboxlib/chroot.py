@@ -15,6 +15,14 @@
 
 '''Execute command in a sandbox, using os.chroot().
 
+This implements an API defined in sandboxlib/__init__.py.
+
+This backend should work on any POSIX-compliant operating system. It has been
+tested on Linux only. The calling process must be able to use the chroot()
+syscall, which is likely to require 'root' priviliges.
+
+Supported network settings: 'undefined'.
+
 The code would be simpler if we just used the 'chroot' program, but it's not
 always practical to do that. First, it may not be installed. Second, we can't
 set the working directory of the program inside the chroot, unless we assume
