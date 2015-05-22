@@ -89,6 +89,8 @@ def run():
                 for item in manifest['app']['environment']:
                     extra_env[item['name']] = item['value']
 
+            extra_env['AC_APP_NAME'] = manifest['name']
+
             executor.run_sandbox(rootfs_path, command, cwd=cwd, extra_env=extra_env)
     else:
         # We should at minimum handle filesystem trees as well.
