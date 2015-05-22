@@ -9,10 +9,21 @@ already present in the build tools [Morph] and [YBD]. We want this new library
 to be usable without depending on [linux-user-chroot], so that it can be used
 on Mac OS X, and hopefully other platforms too.
 
+I have been using the [App Container spec] as a reference during development.
+The scope of 'sandboxlib' is different to that of the App Container spec:
+'sandboxlib' only deals with a single, isolated sandbox (which may or may
+not be a 'container'), where the App Container spec is focused on multiple
+containers. However, 'sandboxlib' would be a useful building block for
+implementing a complete App Container runtime, and simple App Container images
+(.acis) should be runnable with the `run-sandbox` tool directly.
+
+
 [Baserock]: http://www.baserock.org/
 [Morph]: http://wiki.baserock.org/Morph/
 [YBD]: https://github.com/devcurmudgeon/ybd/
 [linux-user-chroot]: https://git.gnome.org/browse/linux-user-chroot/tree/
+
+[App Container spec]: https://github.com/appc/spec/
 
 # License
 
