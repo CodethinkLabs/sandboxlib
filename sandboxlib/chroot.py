@@ -44,10 +44,18 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None):
         # 'subprocess' module.
 
         # FIXME: you gotta be root for this one.
-        os.chroot(rootfs_path)
+        try:
+            try:
+                os.chroot(rootfs_path)
+            except OSError as e:
+                raise RuntimeError("Unable to chroot: %s" % e)
 
-        result = subprocess.call(command, cwd=cwd, env=env)
-        os._exit(result)
+            result = subprocess.call(command, cwd=cwd, env=env)
+        except Exception as e:
+            print("ERROR: %s" % e)
+            result = 255
+        finally:
+            os._exit(result)
     else:
         # Parent process. Wait for child to exit.
         os.waitpid(pid, 0)
