@@ -31,11 +31,31 @@ import sys
 import sandboxlib
 
 
-def run_sandbox(rootfs_path, command, cwd=None, extra_env=None):
+def maximum_possible_isolation():
+    return {
+        'network': 'undefined'
+    }
+
+
+def process_network_config(network):
+    # It'd be possible to implement network isolation on Linux using the
+    # clone() syscall. However, I prefer to have the 'chroot' backend behave
+    # the same on all platforms, and have separate Linux-specific backends to
+    # do Linux-specific stuff.
+
+    assert network == 'undefined', \
+        "'%s' is an unsupported value for 'network' in the 'chroot' backend. " \
+        "Network sharing cannot be be configured in this backend." % network
+
+
+def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
+                network='undefined'):
     if type(command) == str:
         command = [command]
 
     env = sandboxlib.environment_vars(extra_env)
+
+    process_network_config(network)
 
     pid = os.fork()
     if pid == 0:
