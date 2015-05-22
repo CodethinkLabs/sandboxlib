@@ -66,8 +66,13 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
             directory of the calling process otherwise.
       - extra_env: environment variables to set in addition to
             BASE_ENVIRONMENT.
+      - mounts: configures mount sharing. Defaults to 'undefined', where no
+            no attempt is made to isolate mounts. Backends may support
+            'isolated' as well.
+      - extra_mounts: a list of locations to mount inside 'rootfs_path', with
+            type and options specified in a backend-specific way.
       - network: configures network sharing. Defaults to 'undefined', where
-            case no attempt is made to either prevent or provide networking
+            no attempt is made to either prevent or provide networking
             inside the sandbox. Backends may support 'isolated' and/or other
             values as well.
 
@@ -93,6 +98,32 @@ def environment_vars(extra_env=None):
         env.update(extra_env)
 
     return env
+
+
+def validate_extra_mounts(extra_mounts):
+    '''Validate and fill in default values for 'extra_mounts' setting.'''
+    if extra_mounts == None:
+        return []
+
+    new_extra_mounts = []
+
+    for mount_entry in extra_mounts:
+        if len(mount_entry) == 3:
+            new_mount_entry = list(mount_entry) + ['']
+        elif len(mount_entry) == 4:
+            new_mount_entry = list(mount_entry)
+        else:
+            raise AssertionError(
+                "Invalid mount entry in 'extra_mounts': %s" % mount_entry)
+
+        if new_mount_entry[0] is None:
+            new_mount_entry[0] = ''
+            #new_mount_entry[0] = 'none'
+        if new_mount_entry[3] is None:
+            new_mount_entry[3] = ''
+        new_extra_mounts.append(new_mount_entry)
+
+    return new_extra_mounts
 
 
 def _run_command(argv, cwd=None, env=None, preexec_fn=None):

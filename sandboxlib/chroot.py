@@ -21,6 +21,11 @@ This backend should work on any POSIX-compliant operating system. It has been
 tested on Linux only. The calling process must be able to use the chroot()
 syscall, which is likely to require 'root' priviliges.
 
+If any 'extra_mounts' are specified, there must be a working 'mount' binary in
+the host system.
+
+Supported mounts settings: 'undefined'.
+
 Supported network settings: 'undefined'.
 
 The code would be simpler if we just used the 'chroot' program, but it's not
@@ -34,14 +39,29 @@ that the sandbox contains a shell and we do some hack like running
 
 import multiprocessing
 import os
+import subprocess
+import warnings
 
 import sandboxlib
 
 
 def maximum_possible_isolation():
     return {
-        'network': 'undefined'
+        'mounts': 'undefined',
+        'network': 'undefined',
     }
+
+
+def process_mount_config(mounts, extra_mounts):
+    supported_values = ['undefined', 'isolated']
+
+    assert mounts in supported_values, \
+        "'%s' is an unsupported value for 'mounts' in the 'chroot' " \
+        "Mount sharing cannot be configured in this backend." % mounts
+
+    extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
+
+    return extra_mounts
 
 
 def process_network_config(network):
@@ -55,7 +75,31 @@ def process_network_config(network):
         "Network sharing cannot be be configured in this backend." % network
 
 
-def _run_command_in_chroot(pipe, rootfs_path, command, cwd, env):
+def _mount(source, path, mount_type, mount_options):
+    # We depend on the host system's 'mount' program here, which is a
+    # little sad. It's possible to call the libc's mount() function
+    # directly from Python using the 'ctypes' library, and perhaps we
+    # should do that instead.
+    argv = [
+        '/bin/mount', '-t', mount_type, '-o', mount_options, source, path]
+    exit, out, err = sandboxlib._run_command(argv)
+
+    if exit != 0:
+        raise RuntimeError(
+            "%s failed: %s" % (
+                argv, err.decode('utf-8')))
+
+
+def _unmount(path):
+    argv = ['/bin/umount', path]
+    exit, out, err = sandboxlib._run_command(argv)
+
+    if exit != 0:
+        warnings.warn("%s failed: %s" % (
+            argv, err.decode('utf-8')))
+
+
+def _run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
     # This function should be run in a multiprocessing.Process() subprocess,
     # because it calls os.chroot(). There's no 'unchroot()' function! After
     # chrooting, it calls sandboxlib._run_command(), which uses the
@@ -72,28 +116,60 @@ def _run_command_in_chroot(pipe, rootfs_path, command, cwd, env):
     try:
         # You have most likely got to be the 'root' user in order for this to
         # work.
+
+        mounted = []
+
+        for source, mount_point, mount_type, mount_options in extra_mounts:
+            # Strip the preceeding '/' from mount_point, because it'll break
+            # os.path.join().
+            mount_point_no_slash = os.path.relpath(mount_point, start='/')
+
+            path = os.path.join(rootfs_path, mount_point_no_slash)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            _mount(source, path, mount_type, mount_options)
+            mounted.append(path)
+
         try:
             os.chroot(rootfs_path)
         except OSError as e:
             raise RuntimeError("Unable to chroot: %s" % e)
 
+        mounted = [os.path.relpath(path, start=rootfs_path)
+                   for path in mounted]
+
         if cwd is not None:
-            os.chdir(cwd)
+            try:
+                os.chdir(cwd)
+            except OSError as e:
+                raise RuntimeError(
+                    "Unable to set current working directory: %s" % e)
 
         exit, out, err = sandboxlib._run_command(command, env=env)
         pipe.send([exit, out, err])
-        os._exit(0)
+        result = 0
     except Exception as e:
         pipe.send(e)
-        os._exit(1)
+        result = 1
+    finally:
+        # FIXME: this only works if there's actually an 'unmount' available in
+        # the chroot!!!
+        for mountpoint in mounted:
+            _unmount(mountpoint)
+
+    os._exit(result)
 
 
 def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
+                mounts='undefined', extra_mounts=None,
                 network='undefined'):
     if type(command) == str:
         command = [command]
 
     env = sandboxlib.environment_vars(extra_env)
+
+    extra_mounts = process_mount_config(mounts, extra_mounts)
 
     process_network_config(network)
 
@@ -101,7 +177,7 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
 
     process = multiprocessing.Process(
         target=_run_command_in_chroot,
-        args=(pipe_child, rootfs_path, command, cwd, env))
+        args=(pipe_child, extra_mounts, rootfs_path, command, cwd, env))
     process.start()
     process.join()
 

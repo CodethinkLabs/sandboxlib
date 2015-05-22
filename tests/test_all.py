@@ -52,3 +52,11 @@ def test_current_working_directory(sandboxlib_executor, tmpdir):
     assert exit == 0
     assert out.decode('unicode-escape') == '%s\n' % str(tmpdir)
     assert err.decode('unicode-escape') == ''
+
+
+def test_mounts(sandboxlib_executor, tmpdir):
+    # FIXME: This test will fail because we try to run a command in an empty
+    # chroot. Need some kind of statically linked C program to run in there.
+    exit, out, err = sandboxlib_executor.run_sandbox(
+        str(tmpdir), ['/bin/ls', '/proc'],
+        extra_mounts=[(None, '/proc', 'proc')])

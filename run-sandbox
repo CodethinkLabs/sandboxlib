@@ -57,6 +57,10 @@ def parse_args():
         help="command to run in sandbox")
 
     parser.add_argument(
+        '--cwd',
+        type=str, required=False,
+        help="current working directory for COMMAND")
+    parser.add_argument(
         '--executor', '-e',
         choices=['chroot', 'linux_user_chroot', 'linux-user-chroot'],
         type=str, default='chroot',
@@ -81,7 +85,9 @@ def run():
                 command = args.command
 
             cwd = None
-            if 'workingDirectory' in manifest['app']:
+            if args.cwd is not None:
+                cwd = args.cwd
+            elif 'workingDirectory' in manifest['app']:
                 cwd = manifest['app']['workingDirectory']
 
             extra_env = {}
@@ -93,9 +99,13 @@ def run():
 
             sharing_config = executor.maximum_possible_isolation()
 
+            extra_mounts = [
+                (None, '/proc', 'proc', None)
+            ]
+
             exit, out, err = executor.run_sandbox(
                 rootfs_path, command, cwd=cwd, extra_env=extra_env,
-                **sharing_config)
+                extra_mounts=extra_mounts, **sharing_config)
 
             # We'll take a punt on the output being valid UTF-8.
             print(out.decode('utf-8'))
