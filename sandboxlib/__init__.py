@@ -22,6 +22,9 @@ docstrings that describe the different parameters.
 '''
 
 
+import subprocess
+
+
 def maximum_possible_isolation():
     '''Describe the 'tightest' isolation possible with a specific backend.
 
@@ -90,6 +93,28 @@ def environment_vars(extra_env=None):
         env.update(extra_env)
 
     return env
+
+
+def _run_command(argv, cwd=None, env=None, preexec_fn=None):
+    '''Wrapper around subprocess.Popen() with common settings.
+
+    This function blocks until the subprocesses has terminated. It then
+    returns a tuple of (exit code, stdout output, stderr output).
+
+    '''
+    process = subprocess.Popen(
+        argv,
+        # The default is to share file descriptors from the parent process
+        # to the subprocess, which is rarely good for sandboxing.
+        close_fds=True,
+        cwd=cwd,
+        env=env,
+        preexec_fn=preexec_fn,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    process.wait()
+    return process.returncode, process.stdout.read(), process.stderr.read()
 
 
 # Executors

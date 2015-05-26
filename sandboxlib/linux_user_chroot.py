@@ -26,8 +26,6 @@ Supported network settings: 'undefined', 'isolated'.
 '''
 
 
-import subprocess
-
 import sandboxlib
 
 
@@ -79,4 +77,5 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
 
     argv = (
         [linux_user_chroot] + linux_user_chroot_args + [rootfs_path] + command)
-    subprocess.call(argv, env=env)
+    exit, out, err = sandboxlib._run_command(argv, env=env)
+    return exit, out, err

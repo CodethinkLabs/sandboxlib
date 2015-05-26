@@ -32,9 +32,8 @@ that the sandbox contains a shell and we do some hack like running
 '''
 
 
+import multiprocessing
 import os
-import subprocess
-import sys
 
 import sandboxlib
 
@@ -56,6 +55,39 @@ def process_network_config(network):
         "Network sharing cannot be be configured in this backend." % network
 
 
+def _run_command_in_chroot(pipe, rootfs_path, command, cwd, env):
+    # This function should be run in a multiprocessing.Process() subprocess,
+    # because it calls os.chroot(). There's no 'unchroot()' function! After
+    # chrooting, it calls sandboxlib._run_command(), which uses the
+    # 'subprocess' module to exec 'command'. This means there are actually
+    # two subprocesses, which is not ideal, but it seems to be the simplest
+    # implementation.
+    #
+    # An alternative approach would be to use the 'preexec_fn' feature of
+    # subprocess.Popen() to call os.chroot(rootfs_path) and os.chdir(cwd).
+    # The Python 3 '_posixsubprocess' module hints in several places that
+    # deadlocks can occur when using preexec_fn, and it is very difficult to
+    # propagate exceptions from that function, so it seems best to avoid it.
+
+    try:
+        # You have most likely got to be the 'root' user in order for this to
+        # work.
+        try:
+            os.chroot(rootfs_path)
+        except OSError as e:
+            raise RuntimeError("Unable to chroot: %s" % e)
+
+        if cwd is not None:
+            os.chdir(cwd)
+
+        exit, out, err = sandboxlib._run_command(command, env=env)
+        pipe.send([exit, out, err])
+        os._exit(0)
+    except Exception as e:
+        pipe.send(e)
+        os._exit(1)
+
+
 def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
                 network='undefined'):
     if type(command) == str:
@@ -65,25 +97,19 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
 
     process_network_config(network)
 
-    pid = os.fork()
-    if pid == 0:
-        # Child process. It's a bit messy that we create a child process and
-        # then a second child process, but it saves duplicating stuff from the
-        # 'subprocess' module.
+    pipe_parent, pipe_child = multiprocessing.Pipe()
 
-        # FIXME: you gotta be root for this one.
-        try:
-            try:
-                os.chroot(rootfs_path)
-            except OSError as e:
-                raise RuntimeError("Unable to chroot: %s" % e)
+    process = multiprocessing.Process(
+        target=_run_command_in_chroot,
+        args=(pipe_child, rootfs_path, command, cwd, env))
+    process.start()
+    process.join()
 
-            result = subprocess.call(command, cwd=cwd, env=env)
-        except Exception as e:
-            print("ERROR: %s" % e)
-            result = 255
-        finally:
-            os._exit(result)
+    if process.exitcode == 0:
+        exit, out, err = pipe_parent.recv()
+        return exit, out, err
     else:
-        # Parent process. Wait for child to exit.
-        os.waitpid(pid, 0)
+        # Note that no effort is made to pass on the original traceback, which
+        # will be within the _run_command_in_chroot() function somewhere.
+        exception = pipe_parent.recv()
+        raise exception
