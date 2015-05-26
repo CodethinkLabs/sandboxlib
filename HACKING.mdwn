@@ -1,3 +1,16 @@
+The 'sandboxlib' library uses the PEP-8 coding style, as a guide.
+
+# Running the automated test suite
+
+Use `tox`. You'll need 'py.test', 'tox' and their dependencies available.
+
+Note that a lot of the tests will be skipped if you don't run as 'root',
+because some of the sandboxing backends only work when you are the 'root' user.
+
+You can also run `PYTHONPATH=. py.test`, which is quicker but only tests with
+a single version of Python, and runs in your host environment rather than a
+clean one managed by 'virtualenv'.
+
 # Testing that a sandbox conforms to the App Container spec
 
 The [App Container project] provides an 'ace' package containing a
@@ -18,7 +31,7 @@ Container images.
 
 Then, use the `run-sandbox` program from this repository to run the image:
 
-    run-sandbox appc-spec/ace/build/ace-validator-main.aci
+    run-sandbox appc-spec/ace/build/ace-validator-main.aci -e linux-user-chroot
 
 
 [App Container project]: https://github.com/appc/spec
