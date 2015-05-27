@@ -37,6 +37,7 @@ that the sandbox contains a shell and we do some hack like running
 '''
 
 
+import contextlib
 import multiprocessing
 import os
 import subprocess
@@ -75,13 +76,13 @@ def process_network_config(network):
         "Network sharing cannot be be configured in this backend." % network
 
 
-def _mount(source, path, mount_type, mount_options):
+def mount(source, path, mount_type, mount_options):
     # We depend on the host system's 'mount' program here, which is a
     # little sad. It's possible to call the libc's mount() function
     # directly from Python using the 'ctypes' library, and perhaps we
     # should do that instead.
     argv = [
-        '/bin/mount', '-t', mount_type, '-o', mount_options, source, path]
+        'mount', '-t', mount_type, '-o', mount_options, source, path]
     exit, out, err = sandboxlib._run_command(argv)
 
     if exit != 0:
@@ -90,8 +91,8 @@ def _mount(source, path, mount_type, mount_options):
                 argv, err.decode('utf-8')))
 
 
-def _unmount(path):
-    argv = ['/bin/umount', path]
+def unmount(path):
+    argv = ['umount', path]
     exit, out, err = sandboxlib._run_command(argv)
 
     if exit != 0:
@@ -99,7 +100,30 @@ def _unmount(path):
             argv, err.decode('utf-8')))
 
 
-def _run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
+@contextlib.contextmanager
+def mount_all(rootfs_path, mount_info_list):
+    mounted = []
+
+    try:
+        for source, mount_point, mount_type, mount_options in mount_info_list:
+            # Strip the preceeding '/' from mount_point, because it'll break
+            # os.path.join().
+            mount_point_no_slash = os.path.relpath(mount_point, start='/')
+
+            path = os.path.join(rootfs_path, mount_point_no_slash)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            mount(source, path, mount_type, mount_options)
+            mounted.append(path)
+
+        yield
+    finally:
+        for mountpoint in mounted:
+            unmount(mountpoint)
+
+
+def run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
     # This function should be run in a multiprocessing.Process() subprocess,
     # because it calls os.chroot(). There's no 'unchroot()' function! After
     # chrooting, it calls sandboxlib._run_command(), which uses the
@@ -117,27 +141,10 @@ def _run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
         # You have most likely got to be the 'root' user in order for this to
         # work.
 
-        mounted = []
-
-        for source, mount_point, mount_type, mount_options in extra_mounts:
-            # Strip the preceeding '/' from mount_point, because it'll break
-            # os.path.join().
-            mount_point_no_slash = os.path.relpath(mount_point, start='/')
-
-            path = os.path.join(rootfs_path, mount_point_no_slash)
-            if not os.path.exists(path):
-                os.makedirs(path)
-
-            _mount(source, path, mount_type, mount_options)
-            mounted.append(path)
-
         try:
             os.chroot(rootfs_path)
         except OSError as e:
             raise RuntimeError("Unable to chroot: %s" % e)
-
-        mounted = [os.path.relpath(path, start=rootfs_path)
-                   for path in mounted]
 
         if cwd is not None:
             try:
@@ -152,12 +159,6 @@ def _run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
     except Exception as e:
         pipe.send(e)
         result = 1
-    finally:
-        # FIXME: this only works if there's actually an 'unmount' available in
-        # the chroot!!!
-        for mountpoint in mounted:
-            _unmount(mountpoint)
-
     os._exit(result)
 
 
@@ -175,11 +176,12 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
 
     pipe_parent, pipe_child = multiprocessing.Pipe()
 
-    process = multiprocessing.Process(
-        target=_run_command_in_chroot,
-        args=(pipe_child, extra_mounts, rootfs_path, command, cwd, env))
-    process.start()
-    process.join()
+    with mount_all(rootfs_path, extra_mounts):
+        process = multiprocessing.Process(
+            target=run_command_in_chroot,
+            args=(pipe_child, extra_mounts, rootfs_path, command, cwd, env))
+        process.start()
+        process.join()
 
     if process.exitcode == 0:
         exit, out, err = pipe_parent.recv()
