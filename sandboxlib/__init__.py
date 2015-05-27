@@ -30,6 +30,7 @@ def maximum_possible_isolation():
 
     This function returns a dict, with the following keys:
 
+      - mounts
       - network
 
     Each key maps to a parameter of the run_sandbox() function, and each
@@ -38,6 +39,7 @@ def maximum_possible_isolation():
     Example result:
 
         {
+            'mounts': 'undefined'
             'network': 'isolated'
         }
 
