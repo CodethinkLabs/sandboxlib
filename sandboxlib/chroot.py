@@ -76,6 +76,10 @@ def process_network_config(network):
         "Network sharing cannot be be configured in this backend." % network
 
 
+def process_writable_paths(fs_root, writable_paths):
+    assert writable_paths == 'all'
+
+
 def mount(source, path, mount_type, mount_options):
     # We depend on the host system's 'mount' program here, which is a
     # little sad. It's possible to call the libc's mount() function
@@ -123,7 +127,7 @@ def mount_all(rootfs_path, mount_info_list):
             unmount(mountpoint)
 
 
-def run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
+def run_command_in_chroot(pipe, extra_mounts, chroot_path, command, cwd, env):
     # This function should be run in a multiprocessing.Process() subprocess,
     # because it calls os.chroot(). There's no 'unchroot()' function! After
     # chrooting, it calls sandboxlib._run_command(), which uses the
@@ -142,7 +146,7 @@ def run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
         # work.
 
         try:
-            os.chroot(rootfs_path)
+            os.chroot(chroot_path)
         except OSError as e:
             raise RuntimeError("Unable to chroot: %s" % e)
 
@@ -162,7 +166,8 @@ def run_command_in_chroot(pipe, extra_mounts, rootfs_path, command, cwd, env):
     os._exit(result)
 
 
-def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
+def run_sandbox(command, cwd=None, extra_env=None,
+                filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined'):
     if type(command) == str:
@@ -174,12 +179,14 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
 
     process_network_config(network)
 
+    process_writable_paths(filesystem_root, filesystem_writable_paths)
+
     pipe_parent, pipe_child = multiprocessing.Pipe()
 
-    with mount_all(rootfs_path, extra_mounts):
+    with mount_all(filesystem_root, extra_mounts):
         process = multiprocessing.Process(
             target=run_command_in_chroot,
-            args=(pipe_child, extra_mounts, rootfs_path, command, cwd, env))
+            args=(pipe_child, extra_mounts, filesystem_root, command, cwd, env))
         process.start()
         process.join()
 

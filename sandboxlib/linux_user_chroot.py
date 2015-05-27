@@ -33,6 +33,9 @@ Supported mounts settings: 'undefined', 'isolated'.
 
 Supported network settings: 'undefined', 'isolated'.
 
+Much of this code is adapted from Morph, from the Baserock project, from code
+written by Joe Burmeister, Richard Maw, Lars Wirzenius and others.
+
 '''
 
 
@@ -117,7 +120,8 @@ def process_mount_config(root, mounts, extra_mounts):
         path = os.path.join(root, mount_point)
         if not os.path.exists(path):
             os.makedirs(path)
-        mount_script_args.extend((mount_point, mount_type, source, mount_options))
+        mount_script_args.extend((mount_point, mount_type, source,
+                                  mount_options))
     mount_script_args.append('--')
 
     mount_script += textwrap.dedent(r'''
@@ -151,7 +155,112 @@ def process_network_config(network):
     return extra_linux_user_chroot_args
 
 
-def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
+# This function is mostly taken from Morph, from the Baserock project, from
+# file morphlib/fsutils.py.
+#
+# It is used to convert the whitelist 'filesystem_writable_paths' into a
+# blacklist of '--mount-readonly' arguments for linux-user-chroot. It would
+# be better if we could pass the whitelist into linux-user-chroot itself,
+# all that is needed is a patch to linux-user-chroot.
+def invert_paths(tree_walker, paths):
+    '''List paths from `tree_walker` that are not in `paths`.
+
+    Given a traversal of a tree and a set of paths separated by os.sep,
+    return the files and directories that are not part of the set of
+    paths, culling directories that do not need to be recursed into,
+    if the traversal supports this.
+
+    `tree_walker` is expected to follow similar behaviour to `os.walk()`.
+
+    This function will remove directores from the ones listed, to avoid
+    traversing into these subdirectories, if it doesn't need to.
+
+    As such, if a directory is returned, it is implied that its contents
+    are also not in the set of paths.
+
+    If the tree walker does not support culling the traversal this way,
+    such as `os.walk(root, topdown=False)`, then the contents will also
+    be returned.
+
+    The purpose for this is to list the directories that can be made
+    read-only, such that it would leave everything in paths writable.
+
+    Each path in `paths` is expected to begin with the same path as
+    yielded by the tree walker.
+
+    '''
+
+    def normpath(path):
+        if path == '.':
+            return path
+        path = os.path.normpath(path)
+        if not os.path.isabs(path):
+            path = os.path.join('.', path)
+        return path
+    def any_paths_are_subpath_of(prefix):
+        prefix = normpath(prefix)
+        norm_paths = (normpath(path) for path in paths)
+        return any(path[:len(prefix)] == prefix
+                   for path in norm_paths)
+
+    def path_is_listed(path):
+        return any(normpath(path) == normpath(other)
+                   for other in paths)
+
+    for dirpath, dirnames, filenames in tree_walker:
+
+        if path_is_listed(dirpath):
+            # No subpaths need to be considered
+            del dirnames[:]
+            del filenames[:]
+        elif any_paths_are_subpath_of(dirpath):
+            # Subpaths may be marked, or may not, need to leave this
+            # writable, so don't yield, but we don't cull.
+            pass
+        else:
+            # not listed as a parent or an exact match, needs to be
+            # yielded, but we don't need to consider subdirs, so can cull
+            yield dirpath
+            del dirnames[:]
+            del filenames[:]
+
+        for filename in filenames:
+            fullpath = os.path.join(dirpath, filename)
+            if path_is_listed(fullpath):
+                pass
+            else:
+                yield fullpath
+
+
+def process_writable_paths(fs_root, writable_paths):
+    if writable_paths == 'all':
+        extra_linux_user_chroot_args = []
+    else:
+        if type(writable_paths) != list:
+            assert writable_paths == 'none'
+            writable_paths = []
+
+        # FIXME: It's rather annoying that we have to convert the
+        # 'writable_paths' whitelist into a blacklist of '--mount-readonly'
+        # arguments. It's also possible to break here by making a commandline
+        # that is too long, if 'fs_root' contains many directories.
+
+        extra_linux_user_chroot_args = []
+
+        absolute_writable_paths = [
+            os.path.join(fs_root, path.lstrip('/')) for path in writable_paths]
+
+        for d in invert_paths(os.walk(fs_root), absolute_writable_paths):
+            if not os.path.islink(d):
+                rel_path = '/' + os.path.relpath(d, fs_root)
+                extra_linux_user_chroot_args.extend(
+                    ['--mount-readonly', rel_path])
+
+    return extra_linux_user_chroot_args
+
+
+def run_sandbox(command, cwd=None, extra_env=None,
+                filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined'):
     if type(command) == str:
@@ -160,16 +269,20 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
     linux_user_chroot_command = ['linux-user-chroot']
 
     unshare_command = process_mount_config(
-        root=rootfs_path, mounts=mounts, extra_mounts=extra_mounts or [])
+        root=filesystem_root, mounts=mounts, extra_mounts=extra_mounts or [])
 
     linux_user_chroot_command += process_network_config(network)
 
     if cwd is not None:
         linux_user_chroot_command.extend(['--chdir', cwd])
 
+    linux_user_chroot_command += process_writable_paths(
+        filesystem_root, filesystem_writable_paths)
+
+    linux_user_chroot_command.append(filesystem_root)
+
     env = sandboxlib.environment_vars(extra_env)
 
-    argv = (
-        unshare_command + linux_user_chroot_command + [rootfs_path] + command)
+    argv = (unshare_command + linux_user_chroot_command + command)
     exit, out, err = sandboxlib._run_command(argv, env=env)
     return exit, out, err

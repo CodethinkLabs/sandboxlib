@@ -59,8 +59,6 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
     '''Run 'command' in a sandboxed environment.
 
     Parameters:
-      - rootfs_path: the path to the root of the sandbox. Can be '/', if you
-            don't want to isolate the command from the host filesystem at all.
       - command: the command to run. Pass a list of parameters rather than
             using spaces to separate them, e.g. ['echo', '"Hello world"'].
       - cwd: the working directory of 'command', relative to 'rootfs_path'.
@@ -68,6 +66,16 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
             directory of the calling process otherwise.
       - extra_env: environment variables to set in addition to
             BASE_ENVIRONMENT.
+      - filesystem_root: the path to the root of the sandbox. Defaults to '/',
+            which doesn't isolate the command from the host filesystem at all.
+      - filesystem_writable_paths: defaults to 'all', which allows the command
+            to write to anywhere under 'filesystem_root' that the user of the
+            calling process could write to. Backends may accept a list of paths
+            instead of 'all', and will prevent writes to any files not under a
+            path in that whitelist. If 'none' or an empty list is passed, the
+            whole file-system will be read-only. The paths should be relative
+            to filesystem_root. This will processed /after/ extra_mounts are
+            mounted.
       - mounts: configures mount sharing. Defaults to 'undefined', where no
             no attempt is made to isolate mounts. Backends may support
             'isolated' as well.
