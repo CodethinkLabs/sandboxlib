@@ -129,6 +129,8 @@ def validate_extra_mounts(extra_mounts):
         if new_mount_entry[0] is None:
             new_mount_entry[0] = ''
             #new_mount_entry[0] = 'none'
+        if new_mount_entry[2] is None:
+            new_mount_entry[2] = ''
         if new_mount_entry[3] is None:
             new_mount_entry[3] = ''
         new_extra_mounts.append(new_mount_entry)
