@@ -25,6 +25,12 @@ import tarfile
 import tempfile
 
 
+# Mandated by https://github.com/appc/spec/blob/master/SPEC.md#execution-environment
+BASE_ENVIRONMENT = {
+    'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+}
+
+
 def is_app_container_image(path):
     return path.endswith('.aci')
 

@@ -68,7 +68,7 @@ CAPTURE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 
 
-def run_sandbox(command, cwd=None, extra_env=None,
+def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined',
@@ -81,8 +81,7 @@ def run_sandbox(command, cwd=None, extra_env=None,
       - cwd: the working directory of 'command', relative to 'rootfs_path'.
             Defaults to '/' if "rootfs_path" is specified, and the current
             directory of the calling process otherwise.
-      - extra_env: environment variables to set in addition to
-            BASE_ENVIRONMENT.
+      - env: environment variables to set
       - filesystem_root: the path to the root of the sandbox. Defaults to '/',
             which doesn't isolate the command from the host filesystem at all.
       - filesystem_writable_paths: defaults to 'all', which allows the command
@@ -166,27 +165,6 @@ def sandbox_module_for_platform():
         backend = sandboxlib.chroot
 
     return backend
-
-
-BASE_ENVIRONMENT = {
-    # Mandated by https://github.com/appc/spec/blob/master/SPEC.md#execution-environment
-    'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
-}
-
-
-def environment_vars(extra_env=None):
-    '''Return the complete set of environment variables for a sandbox.
-
-    The base environment is defined above, and callers can add extra variables
-    to this or override the defaults by passing a dict to 'extra_env'.
-
-    '''
-    env = BASE_ENVIRONMENT.copy()
-
-    if extra_env is not None:
-        env.update(extra_env)
-
-    return env
 
 
 def validate_extra_mounts(extra_mounts):

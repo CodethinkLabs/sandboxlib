@@ -90,12 +90,13 @@ def run():
             elif 'workingDirectory' in manifest['app']:
                 cwd = manifest['app']['workingDirectory']
 
-            extra_env = {}
+            env = sandboxlib.load.appc.BASE_ENVIRONMENT.copy()
+
             if 'environment' in manifest['app']:
                 for item in manifest['app']['environment']:
-                    extra_env[item['name']] = item['value']
+                    env[item['name']] = item['value']
 
-            extra_env['AC_APP_NAME'] = manifest['name']
+            env['AC_APP_NAME'] = manifest['name']
 
             sharing_config = executor.maximum_possible_isolation()
 
@@ -104,7 +105,7 @@ def run():
             ]
 
             exit, out, err = executor.run_sandbox(
-                rootfs_path, command, cwd=cwd, extra_env=extra_env,
+                rootfs_path, command, cwd=cwd, env=env,
                 extra_mounts=extra_mounts, **sharing_config)
 
             # We'll take a punt on the output being valid UTF-8.

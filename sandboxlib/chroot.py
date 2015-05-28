@@ -168,15 +168,13 @@ def run_command_in_chroot(pipe, stdout, stderr, extra_mounts, chroot_path,
     os._exit(result)
 
 
-def run_sandbox(command, cwd=None, extra_env=None,
+def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined',
                 stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE):
     if type(command) == str:
         command = [command]
-
-    env = sandboxlib.environment_vars(extra_env)
 
     extra_mounts = process_mount_config(mounts, extra_mounts)
 

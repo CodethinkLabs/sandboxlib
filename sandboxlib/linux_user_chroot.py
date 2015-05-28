@@ -259,7 +259,7 @@ def process_writable_paths(fs_root, writable_paths):
     return extra_linux_user_chroot_args
 
 
-def run_sandbox(command, cwd=None, extra_env=None,
+def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined',
@@ -281,8 +281,6 @@ def run_sandbox(command, cwd=None, extra_env=None,
         filesystem_root, filesystem_writable_paths)
 
     linux_user_chroot_command.append(filesystem_root)
-
-    env = sandboxlib.environment_vars(extra_env)
 
     argv = (unshare_command + linux_user_chroot_command + command)
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
