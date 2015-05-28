@@ -22,7 +22,11 @@ docstrings that describe the different parameters.
 '''
 
 
+import logging
+import platform
+import shutil
 import subprocess
+import sys
 
 
 def maximum_possible_isolation():
@@ -87,6 +91,69 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
             values as well.
 
     '''
+    raise NotImplementedError()
+
+
+def Popen(command, stderr=None, stdout=None, **sandbox_config):
+    '''Start a subprocess in a sandbox and return straight away.
+
+    This function aims to function like subprocess.Popen(), but with the
+    subprocess running inside a sandbox. It returns a subprocess.Popen
+    instance as soon as 'command' starts executing.
+
+    The 'stderr' and 'stdout' parameters accept None, a file-like object, a
+    file descriptor (integer), or subprocess.PIPE. The only difference from
+    the subprocess.Popen() function is that 'None' means 'ignore all output'
+    rather than 'inherit parent's stdout': if you want to forward output from
+    the subprocess to stdout, you must pass `stdout=sys.stdout`.
+
+    The sandbox_config arguments are the same as the run_command() function. In
+    most cases you should use run_command() instead of this, but there are
+    certain cases where Popen() could be useful. The run_command() function
+    buffers all data from stdout and stderr of the subprocess in memory, which
+    is impractical if there is a huge amount of data.
+
+    '''
+    raise NotImplementedError()
+
+
+def find_program(program_name):
+    # Python 3.3 and newer provide a 'find program in PATH' function. Otherwise
+    # we fall back to the `which` program.
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
+        program_path = shutil.which(program_name)
+    else:
+        try:
+            argv = ['which', program_name]
+            program_path = subprocess.check_output(argv).strip()
+        except subprocess.CalledProcessError as e:
+            logging.debug("Error searching for %s: %s", program_name, e)
+            program_path = None
+    return program_path
+
+
+def sandbox_module_for_platform():
+    '''Returns an execution module that will work on the current platform.'''
+
+    log = logging.getLogger("sandboxlib")
+
+    backend = None
+
+    if platform.uname() == 'Linux':
+        log.info("Linux detected, looking for 'linux-user-chroot'.")
+        linux_user_chroot_program = find_program('linux-user-chroot')
+        if linux_user_chroot_program is not None:
+            log.info("Found %s, choosing 'linux_user_chroot' module.",
+                     linux_user_chroot_program)
+            backend = sandboxlib.linux_user_chroot
+        else:
+            log.debug("Did not find 'linux-user-chroot' program in PATH.")
+
+    if backend is None:
+        log.info("Choosing 'chroot' sandbox module.")
+        backend = sandboxlib.chroot
+
+    return backend
 
 
 BASE_ENVIRONMENT = {
