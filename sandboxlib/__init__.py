@@ -25,6 +25,7 @@ docstrings that describe the different parameters.
 import logging
 import os
 import platform
+import pipes
 import shutil
 import subprocess
 import sys
@@ -195,6 +196,11 @@ def validate_extra_mounts(extra_mounts):
     return new_extra_mounts
 
 
+
+def argv_to_string(argv):
+    return ' '.join(map(pipes.quote, argv))
+
+
 def _run_command(argv, stdout, stderr, cwd=None, env=None):
     '''Wrapper around subprocess.Popen() with common settings.
 
@@ -214,6 +220,9 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
         stderr = stderr or dev_null
     else:
         dev_null = None
+
+    log = logging.getLogger('sandboxlib')
+    log.debug('Running: %s', argv_to_string(argv))
 
     try:
         process = subprocess.Popen(
