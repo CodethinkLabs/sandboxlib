@@ -262,7 +262,8 @@ def process_writable_paths(fs_root, writable_paths):
 def run_sandbox(command, cwd=None, extra_env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
-                network='undefined'):
+                network='undefined',
+                stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE):
     if type(command) == str:
         command = [command]
 
@@ -284,5 +285,11 @@ def run_sandbox(command, cwd=None, extra_env=None,
     env = sandboxlib.environment_vars(extra_env)
 
     argv = (unshare_command + linux_user_chroot_command + command)
-    exit, out, err = sandboxlib._run_command(argv, env=env)
+    exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     return exit, out, err
+
+
+def run_sandbox_with_redirection(command, **sandbox_config):
+    exit, out, err = run_sandbox(command, **sandbox_config)
+    # out and err will be None
+    return exit

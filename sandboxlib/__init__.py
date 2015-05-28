@@ -23,6 +23,7 @@ docstrings that describe the different parameters.
 
 
 import logging
+import os
 import platform
 import shutil
 import subprocess
@@ -58,8 +59,20 @@ def maximum_possible_isolation():
     raise NotImplementedError()
 
 
-def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
-                network='undefined'):
+
+# Special value for 'stderr' and 'stdout' parameters to indicate 'capture
+# and return the data'.
+CAPTURE = subprocess.PIPE
+
+# Special value for 'stderr' parameter to indicate 'forward to stdout'.
+STDOUT = subprocess.STDOUT
+
+
+def run_sandbox(command, cwd=None, extra_env=None,
+                filesystem_root='/', filesystem_writable_paths='all',
+                mounts='undefined', extra_mounts=None,
+                network='undefined',
+                stderr=CAPTURE, stdout=CAPTURE):
     '''Run 'command' in a sandboxed environment.
 
     Parameters:
@@ -89,29 +102,28 @@ def run_sandbox(rootfs_path, command, cwd=None, extra_env=None,
             no attempt is made to either prevent or provide networking
             inside the sandbox. Backends may support 'isolated' and/or other
             values as well.
+      - stdout: whether to capture stdout, or redirect stdout to a file handle.
+            If set to sandboxlib.CAPTURE, the function will return the stdout
+            data, if not, it will return None for that. If stdout=None, the
+            data will be discarded -- it will NOT inherit the parent process's
+            stdout, unlike with subprocess.Popen(). Set 'stdout=sys.stdout' if
+            you want that.
+      - stderr: same as stdout
+
+    Returns:
+      a tuple of (exit code, stdout output, stderr output).
 
     '''
     raise NotImplementedError()
 
 
-def Popen(command, stderr=None, stdout=None, **sandbox_config):
-    '''Start a subprocess in a sandbox and return straight away.
+def run_sandbox_with_redirection(command, **sandbox_config):
+    '''Start a subprocess in a sandbox, redirecting stderr and/or stdout.
 
-    This function aims to function like subprocess.Popen(), but with the
-    subprocess running inside a sandbox. It returns a subprocess.Popen
-    instance as soon as 'command' starts executing.
+    The sandbox_config arguments are the same as the run_command() function.
 
-    The 'stderr' and 'stdout' parameters accept None, a file-like object, a
-    file descriptor (integer), or subprocess.PIPE. The only difference from
-    the subprocess.Popen() function is that 'None' means 'ignore all output'
-    rather than 'inherit parent's stdout': if you want to forward output from
-    the subprocess to stdout, you must pass `stdout=sys.stdout`.
-
-    The sandbox_config arguments are the same as the run_command() function. In
-    most cases you should use run_command() instead of this, but there are
-    certain cases where Popen() could be useful. The run_command() function
-    buffers all data from stdout and stderr of the subprocess in memory, which
-    is impractical if there is a huge amount of data.
+    This returns just the exit code, because if stdout or stderr are redirected
+    those values will be None in any case.
 
     '''
     raise NotImplementedError()
@@ -205,26 +217,51 @@ def validate_extra_mounts(extra_mounts):
     return new_extra_mounts
 
 
-def _run_command(argv, cwd=None, env=None, preexec_fn=None):
+def _run_command(argv, stdout, stderr, cwd=None, env=None):
     '''Wrapper around subprocess.Popen() with common settings.
 
-    This function blocks until the subprocesses has terminated. It then
-    returns a tuple of (exit code, stdout output, stderr output).
+    This function blocks until the subprocess has terminated.
+
+    Unlike the subprocess.Popen() function, if stdout or stderr are None then
+    output is discarded.
+
+    It then returns a tuple of (exit code, stdout output, stderr output).
+    If stdout was not equal to subprocess.PIPE, stdout will be None. Same for
+    stderr.
 
     '''
-    process = subprocess.Popen(
-        argv,
-        # The default is to share file descriptors from the parent process
-        # to the subprocess, which is rarely good for sandboxing.
-        close_fds=True,
-        cwd=cwd,
-        env=env,
-        preexec_fn=preexec_fn,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    process.wait()
-    return process.returncode, process.stdout.read(), process.stderr.read()
+    if stdout is None or stderr is None:
+        dev_null = open(os.devnull, 'w')
+        stdout = stdout or dev_null
+        stderr = stderr or dev_null
+    else:
+        dev_null = None
+
+    try:
+        process = subprocess.Popen(
+            argv,
+            # The default is to share file descriptors from the parent process
+            # to the subprocess, which is rarely good for sandboxing.
+            close_fds=True,
+            cwd=cwd,
+            env=env,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+        # The 'out' variable will be None unless subprocess.PIPE was passed as
+        # 'stdout' to subprocess.Popen(). Same for 'err' and 'stderr'. If
+        # subprocess.PIPE wasn't passed for either it'd be safe to use .wait()
+        # instead of .communicate(), but if they were then we must use
+        # .communicate() to avoid blocking the subprocess if one of the pipes
+        # becomes full. It's safe to use .communicate() in all cases.
+
+        out, err = process.communicate()
+    finally:
+        if dev_null is not None:
+            dev_null.close()
+
+    return process.returncode, out, err
 
 
 # Executors

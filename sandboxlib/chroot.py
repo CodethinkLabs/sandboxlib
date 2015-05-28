@@ -87,7 +87,7 @@ def mount(source, path, mount_type, mount_options):
     # should do that instead.
     argv = [
         'mount', '-t', mount_type, '-o', mount_options, source, path]
-    exit, out, err = sandboxlib._run_command(argv)
+    exit, out, err = sandboxlib._run_command(argv, stdout=None, stderr=None)
 
     if exit != 0:
         raise RuntimeError(
@@ -97,7 +97,7 @@ def mount(source, path, mount_type, mount_options):
 
 def unmount(path):
     argv = ['umount', path]
-    exit, out, err = sandboxlib._run_command(argv)
+    exit, out, err = sandboxlib._run_command(argv, stdout=None, stderr=None)
 
     if exit != 0:
         warnings.warn("%s failed: %s" % (
@@ -127,7 +127,8 @@ def mount_all(rootfs_path, mount_info_list):
             unmount(mountpoint)
 
 
-def run_command_in_chroot(pipe, extra_mounts, chroot_path, command, cwd, env):
+def run_command_in_chroot(pipe, stdout, stderr, extra_mounts, chroot_path,
+                          command, cwd, env):
     # This function should be run in a multiprocessing.Process() subprocess,
     # because it calls os.chroot(). There's no 'unchroot()' function! After
     # chrooting, it calls sandboxlib._run_command(), which uses the
@@ -157,7 +158,8 @@ def run_command_in_chroot(pipe, extra_mounts, chroot_path, command, cwd, env):
                 raise RuntimeError(
                     "Unable to set current working directory: %s" % e)
 
-        exit, out, err = sandboxlib._run_command(command, env=env)
+        exit, out, err = sandboxlib._run_command(
+            command, stdout, stderr, env=env)
         pipe.send([exit, out, err])
         result = 0
     except Exception as e:
@@ -169,7 +171,8 @@ def run_command_in_chroot(pipe, extra_mounts, chroot_path, command, cwd, env):
 def run_sandbox(command, cwd=None, extra_env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
-                network='undefined'):
+                network='undefined',
+                stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE):
     if type(command) == str:
         command = [command]
 
@@ -186,7 +189,8 @@ def run_sandbox(command, cwd=None, extra_env=None,
     with mount_all(filesystem_root, extra_mounts):
         process = multiprocessing.Process(
             target=run_command_in_chroot,
-            args=(pipe_child, extra_mounts, filesystem_root, command, cwd, env))
+            args=(pipe_child, stdout, stderr, extra_mounts, filesystem_root,
+                  command, cwd, env))
         process.start()
         process.join()
 
@@ -198,3 +202,9 @@ def run_sandbox(command, cwd=None, extra_env=None,
         # will be within the _run_command_in_chroot() function somewhere.
         exception = pipe_parent.recv()
         raise exception
+
+
+def run_sandbox_with_redirection(command, **sandbox_config):
+    exit, out, err = run_sandbox(command, **sandbox_config)
+    # out and err will be None
+    return exit
