@@ -65,8 +65,6 @@ def process_mount_config(root, mounts, extra_mounts):
         "'linux-user-chroot' backend. Supported values: %s" \
         % (mounts, ', '.join(supported_values))
 
-    extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
-
     # Use 'unshare' to create a new mount namespace.
     #
     # In order to mount the things specified in 'extra_mounts' inside the
@@ -117,9 +115,6 @@ def process_mount_config(root, mounts, extra_mounts):
     ''')
 
     for source, mount_point, mount_type, mount_options in extra_mounts:
-        path = os.path.join(root, mount_point)
-        if not os.path.exists(path):
-            os.makedirs(path)
         mount_script_args.extend((mount_point, mount_type, source,
                                   mount_options))
     mount_script_args.append('--')
@@ -259,6 +254,17 @@ def process_writable_paths(fs_root, writable_paths):
     return extra_linux_user_chroot_args
 
 
+def create_mount_points_if_missing(filesystem_root, mount_info_list):
+    for source, mount_point, mount_type, mount_options in mount_info_list:
+        # Strip the preceeding '/' from mount_point, because it'll break
+        # os.path.join().
+        mount_point_no_slash = os.path.relpath(mount_point, start='/')
+
+        path = os.path.join(filesystem_root, mount_point_no_slash)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+
 def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
@@ -268,6 +274,8 @@ def run_sandbox(command, cwd=None, env=None,
         command = [command]
 
     linux_user_chroot_command = ['linux-user-chroot']
+
+    extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
 
     unshare_command = process_mount_config(
         root=filesystem_root, mounts=mounts, extra_mounts=extra_mounts or [])
@@ -281,6 +289,8 @@ def run_sandbox(command, cwd=None, env=None,
         filesystem_root, filesystem_writable_paths)
 
     linux_user_chroot_command.append(filesystem_root)
+
+    create_mount_points_if_missing(filesystem_root, extra_mounts)
 
     argv = (unshare_command + linux_user_chroot_command + command)
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)

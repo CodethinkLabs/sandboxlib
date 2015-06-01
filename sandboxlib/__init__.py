@@ -96,8 +96,12 @@ def run_sandbox(command, cwd=None, env=None,
       - mounts: configures mount sharing. Defaults to 'undefined', where no
             no attempt is made to isolate mounts. Backends may support
             'isolated' as well.
-      - extra_mounts: a list of locations to mount inside 'rootfs_path', with
-            type and options specified in a backend-specific way.
+      - extra_mounts: a list of locations to mount inside 'rootfs_path',
+            specified as a list of tuples of (source_path, target_path, type,
+            options). The 'type' and 'options' should match what would be
+            specified in /etc/fstab, but a backends may support only a limited
+            subset of values. The 'target_path' is relative to filesystem_root
+            and will be created before mounting if it doesn't exist.
       - network: configures network sharing. Defaults to 'undefined', where
             no attempt is made to either prevent or provide networking
             inside the sandbox. Backends may support 'isolated' and/or other
