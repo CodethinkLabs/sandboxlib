@@ -18,9 +18,7 @@
 This implements an API defined in sandboxlib/__init__.py.
 
 This backend requires the 'linux-user-chroot' program, which can only be used
-with Linux. It also requires the 'unshare' program from the 'util-linux'
-package, a 'mount' program that supports the `--make-rprivate` flag, and a 'sh'
-program with certain standard features.
+with Linux.
 
 The 'linux-user-chroot' program is intended to be 'setuid', and thus usable by
 non-'root' users at the discretion of the system administrator. However, the
@@ -39,8 +37,10 @@ written by Joe Burmeister, Richard Maw, Lars Wirzenius and others.
 '''
 
 
+import contextlib
 import os
-import textwrap
+import shutil
+import tempfile
 
 import sandboxlib
 
@@ -52,12 +52,71 @@ def maximum_possible_isolation():
     }
 
 
-def process_mount_config(root, mounts, extra_mounts):
-    # FIXME: currently errors in the generated shell script will appear in the
-    # same way as errors from the actual command that the caller wanted to run.
-    # That's pretty boneheaded. Could be fixed by setting a flag at the end of
-    # the shell script, perhaps.
+def tmpfs_for_user():
+    '''Return a temporary directory that is hopefully within a 'tmpfs'.
 
+    If possible, the temporary directory is created under XDG_RUNTIME_DIR
+    (usually /run/user/$UID/). This will be within a tmpfs owned by the user,
+    so if the system has some per-user quota for tmpfs contents, the new
+    tempdir will be within that quota.
+
+    If there's no XDG_RUNTIME_DIR, TMPDIR or /tmp is used.
+
+    '''
+    runtime_dir = os.environ.get('XDG_RUNTIME_DIR')
+    if runtime_dir is not None and os.path.isdir(runtime_dir):
+        tmpfs_dir = tempfile.mkdtemp(prefix='sandboxlib.', suffix='.tmpfs',
+                                     dir=runtime_dir)
+    else:
+        tmpfs_dir = tempfile.mkdtemp(prefix='sandboxlib.', suffix='.tmpfs')
+    return tmpfs_dir
+
+
+def args_for_mount(mount_source, mount_target, mount_type, mount_options,
+                   tmpfs_dir):
+    def is_none(value):
+        return value in [None, 'none', '']
+
+    args = []
+    if mount_type == 'proc':
+        if not is_none(mount_options):
+            raise AssertionError(
+                "No options for 'proc' filesystems are supported in the "
+                "linux-user-chroot backend. Got '%s'" % mount_options)
+        else:
+            args = ['--mount-proc', mount_target]
+    elif mount_type == 'tmpfs':
+        if not is_none(mount_options):
+            raise AssertionError(
+                "No options for 'tmpfs' filesystems are supported in the "
+                "linux-user-chroot backend. Got '%s'" % mount_options)
+        else:
+            # tmpfs mounts are 'faked' by binding in a temporary directory
+            # from a temporary directory in an existing tmpfs.
+            fake_tmpfs = os.path.join(tmpfs_dir, mount_target.lstrip('/'))
+            os.makedirs(fake_tmpfs)
+            args = ['--mount-bind', fake_tmpfs, mount_target]
+    elif mount_options == 'bind':
+        if not is_none(mount_type):
+            raise AssertionError(
+                "Type cannot be specified for 'bind' mounts. Got '%s'" %
+                mount_type)
+        else:
+            args = ['--mount-bind', mount_source, mount_target]
+    else:
+        raise AssertionError(
+            "Unsupported mount type '%s' for linux-user-chroot backend." %
+            mount_type)
+
+    return args
+
+
+@contextlib.contextmanager
+def process_mount_config(mounts, extra_mounts):
+    # linux-user-chroot always calls clone(CLONE_NEWNS) which creates a new
+    # mount namespace. It also ensures that all mount points inside the sandbox
+    # are private, by calling mount("/", MS_PRIVATE | MS_REC). So 'isolated' is
+    # the only option.
     supported_values = ['undefined', 'isolated']
 
     assert mounts in supported_values, \
@@ -65,65 +124,22 @@ def process_mount_config(root, mounts, extra_mounts):
         "'linux-user-chroot' backend. Supported values: %s" \
         % (mounts, ', '.join(supported_values))
 
-    # Use 'unshare' to create a new mount namespace.
-    #
-    # In order to mount the things specified in 'extra_mounts' inside the
-    # sandbox's mount namespace, we add a script that runs bunch of 'mount'
-    # commands to the 'unshare' commandline. The mounts it creates are
-    # unmounted automatically when the namespace is deleted, which is done when
-    # 'unshare' exits.
-    #
-    # The 'undefined' and 'isolated' options are treated the same in this
-    # backend, which avoids having a separate, useless code path.
+    # This is only used if there are tmpfs mounts, but it's simpler to
+    # create it unconditionally.
+    tmpfs_dir = tmpfs_for_user()
 
-    unshare_command = ['unshare', '--mount', '--', 'sh', '-e', '-c']
+    try:
+        extra_linux_user_chroot_args = []
 
-    # The single - is just a shell convention to fill $0 when using -c,
-    # since ordinarily $0 contains the program name.
-    mount_script_args = ['-']
+        for mount_info in extra_mounts:
+            args = args_for_mount(*mount_info, tmpfs_dir=tmpfs_dir)
+            extra_linux_user_chroot_args.extend(args)
 
-    # This command marks any existing mounts inside the sandboxed filesystem
-    # as 'private'. If they were pre-existing 'shared' or 'slave' mounts, it'd
-    # be possible to change what is mounted in the sandbox from outside the
-    # sandbox, or to change a mountpoint outside the sandbox from within it.
-    mount_script = textwrap.dedent(r'''
-        mount --make-rprivate /
-        root="$1"
-        shift
-        ''')
-    mount_script_args.append(root)
-
-    # The rest of this script processes the items from 'extra_mounts'.
-    mount_script += textwrap.dedent(r'''
-    while true; do
-        case "$1" in
-        --)
-            shift
-            break
-            ;;
-        *)
-            mount_point="$1"
-            mount_type="$2"
-            mount_source="$3"
-            mount_options="$4"
-            shift 4
-            path="$root/$mount_point"
-            mount -t "$mount_type" -o "$mount_options" "$mount_source" "$path"
-            ;;
-        esac
-    done
-    ''')
-
-    for source, mount_point, mount_type, mount_options in extra_mounts:
-        mount_script_args.extend((mount_point, mount_type, source,
-                                  mount_options))
-    mount_script_args.append('--')
-
-    mount_script += textwrap.dedent(r'''
-    exec "$@"
-    ''')
-
-    return unshare_command + [mount_script] + mount_script_args
+        yield extra_linux_user_chroot_args
+    finally:
+        # The tmpfs dir is a directory *in* a pre-existing tmpfs, so we need
+        # to delete its contents.
+        shutil.rmtree(tmpfs_dir)
 
 
 def process_network_config(network):
@@ -277,9 +293,6 @@ def run_sandbox(command, cwd=None, env=None,
 
     extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
 
-    unshare_command = process_mount_config(
-        root=filesystem_root, mounts=mounts, extra_mounts=extra_mounts or [])
-
     linux_user_chroot_command += process_network_config(network)
 
     if cwd is not None:
@@ -288,12 +301,15 @@ def run_sandbox(command, cwd=None, env=None,
     linux_user_chroot_command += process_writable_paths(
         filesystem_root, filesystem_writable_paths)
 
-    linux_user_chroot_command.append(filesystem_root)
-
     create_mount_points_if_missing(filesystem_root, extra_mounts)
 
-    argv = (unshare_command + linux_user_chroot_command + command)
-    exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
+    mount_context = process_mount_config(
+        mounts=mounts, extra_mounts=extra_mounts or [])
+    with mount_context as linux_user_chroot_mount_args:
+        linux_user_chroot_command.extend(linux_user_chroot_mount_args)
+
+        argv = linux_user_chroot_command + [filesystem_root] + command
+        exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     return exit, out, err
 
 

@@ -76,6 +76,17 @@ class TestMounts(object):
         assert out.decode('unicode-escape') == "/proc exists"
         assert exit == 0
 
+    def test_mount_tmpfs(self, sandboxlib_executor, mounts_test_sandbox):
+        exit, out, err = sandboxlib_executor.run_sandbox(
+            ['test-file-or-directory-exists', '/dev/shm'],
+            filesystem_root=str(mounts_test_sandbox),
+            extra_mounts=[(None, '/dev/shm', 'tmpfs')])
+
+        assert err.decode('unicode-escape') == ''
+        assert out.decode('unicode-escape') == "/dev/shm exists"
+        assert exit == 0
+
+
 
 class TestWriteablePaths(object):
     @pytest.fixture()
