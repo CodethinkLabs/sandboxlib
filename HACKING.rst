@@ -17,13 +17,15 @@ Process:
 3. Upload to PyPI: ``twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/sandboxlib-0.0.0.tar.gz``
 4. Create and push tag: ``git tag --annotate -m "sandboxlib version 0.0.0" 0.0.0 && git push --tags``
 
-I intend to follow `semantic versioning`_ and `PEP 440`_ when numbering
-versions of this library.
+I intend to follow the `PBR Linux/Python Compatible Semantic Versioning`_
+version scheme for this library. This is based on the `semantic versioning`_
+and `PEP 440`_ schemes.
 
 For background on realising to the Python Package Index (PyPI), see:
 https://packaging.python.org/en/latest/distributing.html.
 
-.. _semantic versioning: <http://www.semver.org/>
+.. _PBR Linux/Python Compatible Semantic Versioning: http://docs.openstack.org/developer/pbr/semver.html
+.. _semantic versioning: http://www.semver.org/
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440/
 .. _PyPI: http://pypi.python.org/
 
