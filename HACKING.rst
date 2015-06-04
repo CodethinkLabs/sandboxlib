@@ -3,8 +3,12 @@ The 'sandboxlib' library uses the PEP-8 coding style, as a guide.
 Release process
 ---------------
 
-Basically, tag the commit you're going to release, build and upload a source
-distribution tarball to PyPI_, and then increment the version number.
+Basically, tag the commit you're going to release with a sensible version
+number, then build and upload a source distribution tarball to PyPI_.
+
+The 'sandboxlib' library uses PBR_, which makes packaging pretty easy. In
+particular, note that _PBR will work out a version number automatically from
+Git tags.
 
 You need
 - an account on PyPI with access to the 'sandboxlib' project
@@ -13,9 +17,9 @@ You need
 Process:
 
 1. Run tests: ``sudo tox``
+2. Create and push tag: ``git tag --annotate -m "sandboxlib version 0.0.0" 0.0.0 && git push --tags``
 2. Create source distribution tarball: ``python ./setup.py sdist``
 3. Upload to PyPI: ``twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/sandboxlib-0.0.0.tar.gz``
-4. Create and push tag: ``git tag --annotate -m "sandboxlib version 0.0.0" 0.0.0 && git push --tags``
 
 I intend to follow the `PBR Linux/Python Compatible Semantic Versioning`_
 version scheme for this library. This is based on the `semantic versioning`_
