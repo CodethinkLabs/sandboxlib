@@ -7,7 +7,7 @@ Basically, tag the commit you're going to release with a sensible version
 number, then build and upload a source distribution tarball to PyPI_.
 
 The 'sandboxlib' library uses PBR_, which makes packaging pretty easy. In
-particular, note that _PBR will work out a version number automatically from
+particular, note that PBR_ will work out a version number automatically from
 Git tags.
 
 You need
