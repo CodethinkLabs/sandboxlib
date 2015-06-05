@@ -232,7 +232,7 @@ def process_writable_paths(fs_root, writable_paths):
         extra_linux_user_chroot_args = []
     else:
         if type(writable_paths) != list:
-            assert writable_paths == 'none'
+            assert writable_paths in [None, 'none']
             writable_paths = []
 
         # FIXME: It's rather annoying that we have to convert the
