@@ -26,9 +26,11 @@ import logging
 import os
 import platform
 import pipes
-import shutil
 import subprocess
-import sys
+
+
+class ProgramNotFound(Exception):
+    pass
 
 
 def maximum_possible_isolation():
@@ -133,21 +135,6 @@ def run_sandbox_with_redirection(command, **sandbox_config):
     raise NotImplementedError()
 
 
-def find_program(program_name):
-    # Python 3.3 and newer provide a 'find program in PATH' function. Otherwise
-    # we fall back to the `which` program.
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
-        program_path = shutil.which(program_name)
-    else:
-        try:
-            argv = ['which', program_name]
-            program_path = subprocess.check_output(argv).strip()
-        except subprocess.CalledProcessError as e:
-            logging.debug("Error searching for %s: %s", program_name, e)
-            program_path = None
-    return program_path
-
-
 def sandbox_module_for_platform():
     '''Returns an execution module that will work on the current platform.'''
 
@@ -157,13 +144,12 @@ def sandbox_module_for_platform():
 
     if platform.uname() == 'Linux':
         log.info("Linux detected, looking for 'linux-user-chroot'.")
-        linux_user_chroot_program = find_program('linux-user-chroot')
-        if linux_user_chroot_program is not None:
-            log.info("Found %s, choosing 'linux_user_chroot' module.",
-                     linux_user_chroot_program)
+        try:
+            program = sandboxlib.linux_user_chroot.linux_user_chroot_program()
+            log.info("Found %s, choosing 'linux_user_chroot' module.", program)
             backend = sandboxlib.linux_user_chroot
-        else:
-            log.debug("Did not find 'linux-user-chroot' program in PATH.")
+        except sandboxlib.utils.ProgramNotFound as e:
+            log.debug("Did not find 'linux-user-chroot': %s", e)
 
     if backend is None:
         log.info("Choosing 'chroot' sandbox module.")
@@ -260,3 +246,4 @@ import sandboxlib.chroot
 import sandboxlib.linux_user_chroot
 
 import sandboxlib.load
+import sandboxlib.utils

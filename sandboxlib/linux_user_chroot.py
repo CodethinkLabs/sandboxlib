@@ -281,6 +281,11 @@ def create_mount_points_if_missing(filesystem_root, mount_info_list):
             os.makedirs(path)
 
 
+def linux_user_chroot_program():
+    # Raises sandboxlib.ProgramNotFound if not found.
+    return sandboxlib.utils.find_program('linux-user-chroot')
+
+
 def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
@@ -289,7 +294,7 @@ def run_sandbox(command, cwd=None, env=None,
     if type(command) == str:
         command = [command]
 
-    linux_user_chroot_command = ['linux-user-chroot']
+    linux_user_chroot_command = [linux_user_chroot_program()]
 
     extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
 
