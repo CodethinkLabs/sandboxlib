@@ -148,7 +148,7 @@ def sandbox_module_for_platform():
             program = sandboxlib.linux_user_chroot.linux_user_chroot_program()
             log.info("Found %s, choosing 'linux_user_chroot' module.", program)
             backend = sandboxlib.linux_user_chroot
-        except sandboxlib.utils.ProgramNotFound as e:
+        except sandboxlib.ProgramNotFound as e:
             log.debug("Did not find 'linux-user-chroot': %s", e)
 
     if backend is None:
