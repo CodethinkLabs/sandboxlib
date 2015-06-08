@@ -274,7 +274,7 @@ def create_mount_points_if_missing(filesystem_root, mount_info_list):
     for source, mount_point, mount_type, mount_options in mount_info_list:
         # Strip the preceeding '/' from mount_point, because it'll break
         # os.path.join().
-        mount_point_no_slash = os.path.relpath(mount_point, start='/')
+        mount_point_no_slash = os.path.abspath(mount_point).lstrip('/')
 
         path = os.path.join(filesystem_root, mount_point_no_slash)
         if not os.path.exists(path):
