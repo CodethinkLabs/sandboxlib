@@ -21,11 +21,7 @@ This backend requires the 'linux-user-chroot' program, which can only be used
 with Linux.
 
 The 'linux-user-chroot' program is intended to be 'setuid', and thus usable by
-non-'root' users at the discretion of the system administrator. However, the
-implementation here also uses 'unshare --mount', which can only be run as
-'root'. So this backend can only be run as 'root' at present. Modifying
-linux-user-chroot to handle creating the new mount namespace and processing
-any extra mounts would be a useful fix.
+non-'root' users at the discretion of the system administrator.
 
 Much of this code is adapted from Morph, from the Baserock project, from code
 written by Joe Burmeister, Richard Maw, Lars Wirzenius and others.
