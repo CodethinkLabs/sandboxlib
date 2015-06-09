@@ -22,6 +22,14 @@ import sys
 import sandboxlib
 
 
+def check_parameter(name, value, supported_values):
+    assert value in supported_values, \
+        "'%(value)s' is an unsupported value for '%(name)s' in this " \
+        "backend. Supported values: %(supported_values)s".format(
+            name=name, value=value,
+            supported_values=', '.join(supported_values))
+
+
 def find_program(program_name):
     search_path = os.environ.get('PATH')
 

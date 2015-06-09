@@ -117,13 +117,9 @@ def process_mount_config(mounts, extra_mounts):
     # linux-user-chroot always calls clone(CLONE_NEWNS) which creates a new
     # mount namespace. It also ensures that all mount points inside the sandbox
     # are private, by calling mount("/", MS_PRIVATE | MS_REC). So 'isolated' is
-    # the only option.
-    supported_values = ['undefined', 'isolated']
+    # the only option for 'mounts'.
 
-    assert mounts in supported_values, \
-        "'%s' is an unsupported value for 'mounts' in the " \
-        "'linux-user-chroot' backend. Supported values: %s" \
-        % (mounts, ', '.join(supported_values))
+    sandboxlib.utils.check_parameter('mounts', mounts, CAPABILITIES['mounts'])
 
     # This is only used if there are tmpfs mounts, but it's simpler to
     # create it unconditionally.
@@ -151,12 +147,7 @@ def process_network_config(network):
     # blocked'? Or does it mean 'working, with /etc/resolv.conf correctly set
     # up'? So that's not handled yet.
 
-    supported_values = ['undefined', 'isolated']
-
-    assert network in supported_values, \
-        "'%s' is an unsupported value for 'network' in the " \
-        "'linux-user-chroot' backend. Supported values: %s" \
-        % (network, ', '.join(supported_values))
+    sandboxlib.utils.check_parameter('network', network, CAPABILITIES['network'])
 
     if network == 'isolated':
         # This is all we need to do for network isolation
