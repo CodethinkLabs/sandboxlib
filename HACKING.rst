@@ -46,6 +46,10 @@ You can also run ``PYTHONPATH=. py.test``, which is quicker but only tests with
 a single version of Python, and runs in your host environment rather than a
 clean one managed by 'virtualenv'.
 
+On Mac OS X the test suite mostly doesn't work, because the C compiler on Mac
+OS X `cannot build statically linked programs
+<https://stackoverflow.com/questions/5259249/>`_.
+
 Testing that a sandbox conforms to the App Container spec
 ---------------------------------------------------------
 
