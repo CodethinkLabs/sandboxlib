@@ -32,8 +32,9 @@ environment.
 Current backends
 ================
 
-- chroot: any POSIX OS
-- linux-user-chroot_ (plus ``unshare``): Linux-only
+- chroot: any POSIX OS, requires 'root' priviliges
+- linux-user-chroot_: Linux-only, does not require 'root', requires
+  ``linux-user-chroot`` to be installed and setuid root
 
 Possible future backends
 ========================
@@ -68,15 +69,58 @@ virtualisation. The PRoot tool is `discontinued <https://plus.google.com/1076051
 
 .. _PRoot: http://proot.me/
 
+Sandstorm.io
+~~~~~~~~~~~~
+
+Sandstorm.io_ aims to be a platform for running web applications on shared
+infrastructure, with individual users in mind.
+
+It uses the 'namespaces' feature of Linux. The
+https://github.com/sandstorm-io/sandstorm for more information.
+
+Sandstorm.io_ is for a specific use case of web application sandboxing, so it
+doesn't make sense for sandboxlib to wrap it. Use it directly if it suits your
+purpose!
+
+.. _Sandstorm.io: https://sandstorm.io/
+
 seccomp
 ~~~~~~~
 
-The Linux kernel provides seccomp_ mode. This is a very restrictive sandbox
-in which most programs would not work at all. It is `used by Google Chrome
+The Linux kernel provides the seccomp_ syscall, which can be used in two ways.
+
+The ``SECCOMP_SET_MODE_STRICT`` operation creates a very restrictive but secure
+sandbox. Most programs wouldn't work in this sandbox, but it does have some uses.
+It is `used by Google Chrome
 <https://code.google.com/p/chromium/wiki/LinuxSandboxing#The_seccomp-bpf_sandbox>`_,
 among other things.
 
-.. _seccomp: https://en.wikipedia.org/wiki/Seccomp
+The ``SECCOMP_SET_MODE_FILTER`` operation allows blacklisting certain system
+calls. This can be done in such a way that most existing programs work, but
+certain obvious security holes in a sandbox are closed (for example, the
+kexec() system call).
+
+.. _seccomp: http://man7.org/linux/man-pages/man2/seccomp.2.html
+
+xdg-app (GNOME Application Sandboxing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The xdg-app_ project started from a desire in the GNOME_ desktop project to
+allow running 3rd-party applications with some isolation from the host system.
+Mobile platforms like Android and iOS have been doing this for some time
+already.
+
+It implements sandboxing mainly using the 'namespaces' feature of Linux.  Find
+out more about `the project <https://wiki.gnome.org/Projects/SandboxedApps>`_
+and `how the sandboxing is implemented
+<https://wiki.gnome.org/Projects/SandboxedApps/Sandbox>`_.
+
+xdg-app_ is for a specific use case of desktop application sandboxing, so it
+doesn't make sense for sandboxlib to wrap it. Use it directly if it suits your
+purpose!
+
+.. _GNOME: https://www.gnome.org/
+.. _xdg-app: https://github.com/alexlarsson/xdg-app
 
 Further reading
 ~~~~~~~~~~~~~~~
@@ -106,6 +150,24 @@ implementing a complete App Container runtime, and simple App Container images
 
 .. _App Container spec: https://github.com/appc/spec/
 
+Clear Containers
+~~~~~~~~~~~~~~~~
+
+Intel_ are producing a Linux distribution named `Clear Linux
+<https://clearlinux.org/>`_, as part of a project to develop what they call
+`Clear Containers <https://lwn.net/Articles/644675/>`_. The idea is to make
+virtualisation with QEMU_ fast enough and convenient enough to compete with
+current containerisation software. All current containerisation systems use
+kernel namespacing, which provide a much weaker security barrier than full
+virtualisation.
+
+The implementation depends on Linux's KVM_ feature, plus patched versions of
+QEMU_ and Linux.
+
+.._Intel: http://www.intel.com/
+.._KVM: http://www.linux-kvm.org/page/Main_Page
+.._QEMU: https://en.wikipedia.org/wiki/QEMU
+
 Docker
 ~~~~~~
 
@@ -114,7 +176,7 @@ support multiple platform-specific backends <https://blog.docker.com/2014/03/doc
 for running containers, I am only aware of Linux-specific backends at the time
 of writing.
 
-.. _Docker: http://www.docker.io/
+.. _Docker: https://www.docker.io/
 
 schroot
 ~~~~~~~
