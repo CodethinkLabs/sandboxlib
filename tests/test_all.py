@@ -26,7 +26,11 @@ from programs import (
     session_tmpdir)
 
 
-@pytest.fixture(params=['chroot', 'linux_user_chroot'])
+import logging, sys
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+
+#@pytest.fixture(params=['chroot', 'linux_user_chroot'])
+@pytest.fixture(params=['systemd_nspawn'])
 def sandboxlib_executor(request):
     executor = getattr(sandboxlib, request.param)
 
@@ -54,9 +58,9 @@ def test_no_output(sandboxlib_executor):
 def test_stdout(sandboxlib_executor):
     exit, out, err = sandboxlib_executor.run_sandbox(['echo', 'xyzzy'])
 
-    assert exit == 0
-    assert out.decode('unicode-escape') == 'xyzzy\n'
     assert err.decode('unicode-escape') == ''
+    assert out.decode('unicode-escape') == 'xyzzy\n'
+    assert exit == 0
 
 
 def test_current_working_directory(sandboxlib_executor, tmpdir):
@@ -83,7 +87,7 @@ class TestMounts(object):
 
     def test_mount_proc(self, sandboxlib_executor, mounts_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-or-directory-exists', '/proc'],
+            ['/bin/test-file-or-directory-exists', '/proc'],
             filesystem_root=str(mounts_test_sandbox),
             extra_mounts=[(None, '/proc', 'proc')])
 
@@ -93,7 +97,7 @@ class TestMounts(object):
 
     def test_mount_tmpfs(self, sandboxlib_executor, mounts_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-or-directory-exists', '/dev/shm'],
+            ['/bin/test-file-or-directory-exists', '/dev/shm'],
             filesystem_root=str(mounts_test_sandbox),
             extra_mounts=[(None, '/dev/shm', 'tmpfs')])
 
@@ -125,7 +129,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='none')
 
@@ -140,7 +144,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths=['/data/1'])
 
@@ -152,7 +156,7 @@ class TestWriteablePaths(object):
     def test_all_writable(self, sandboxlib_executor,
                           writable_paths_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='all')
 
@@ -167,7 +171,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='none',
             extra_mounts=[
@@ -185,7 +189,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths=['/data'],
             extra_mounts=[

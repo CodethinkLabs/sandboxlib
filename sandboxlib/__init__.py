@@ -232,6 +232,7 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
 # Executors
 import sandboxlib.chroot
 import sandboxlib.linux_user_chroot
+import sandboxlib.systemd_nspawn
 
 import sandboxlib.load
 import sandboxlib.utils
