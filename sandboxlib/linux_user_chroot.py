@@ -27,10 +27,6 @@ implementation here also uses 'unshare --mount', which can only be run as
 linux-user-chroot to handle creating the new mount namespace and processing
 any extra mounts would be a useful fix.
 
-Supported mounts settings: 'undefined', 'isolated'.
-
-Supported network settings: 'undefined', 'isolated'.
-
 Much of this code is adapted from Morph, from the Baserock project, from code
 written by Joe Burmeister, Richard Maw, Lars Wirzenius and others.
 
@@ -45,11 +41,16 @@ import tempfile
 import sandboxlib
 
 
-def maximum_possible_isolation():
-    return {
-        'mounts': 'isolated',
-        'network': 'isolated',
-    }
+CAPABILITIES = {
+    'network': ['isolated', 'undefined'],
+    'mounts': ['isolated', 'undefined'],
+    'writable_paths': ['all', 'any'],
+}
+
+
+def degrade_config_for_capabilities(in_config, warn=True):
+    # This backend has the most features, right now!
+    return in_config
 
 
 def tmpfs_for_user():
