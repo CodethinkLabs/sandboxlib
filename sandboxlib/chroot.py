@@ -18,15 +18,11 @@
 This implements an API defined in sandboxlib/__init__.py.
 
 This backend should work on any POSIX-compliant operating system. It has been
-tested on Linux only. The calling process must be able to use the chroot()
-syscall, which is likely to require 'root' priviliges.
+tested on Linux and Mac OS X. The calling process must be able to use the
+chroot() syscall, which is likely to require 'root' priviliges.
 
 If any 'extra_mounts' are specified, there must be a working 'mount' binary in
 the host system.
-
-Supported mounts settings: 'undefined'.
-
-Supported network settings: 'undefined'.
 
 The code would be simpler if we just used the 'chroot' program, but it's not
 always practical to do that. First, it may not be installed. Second, we can't
@@ -46,17 +42,42 @@ import warnings
 import sandboxlib
 
 
-def maximum_possible_isolation():
-    return {
-        'mounts': 'undefined',
-        'network': 'undefined',
-    }
+CAPABILITIES = {
+    'network': ['undefined'],
+    'mounts': ['undefined'],
+    'writable_paths': ['all'],
+}
+
+
+def degrade_config_for_capabilities(in_config, warn=True):
+    # Currently this is all done manually... it may make sense to add something
+    # in utils.py that automatically checks the config against CAPABILITIES.
+    out_config = in_config.copy()
+
+    def degrade_and_warn(name, allowed_value):
+        if warn:
+            backend = 'chroot'
+            value = out_config[name]
+            msg = (
+                'Unable to set %(name)s=%(value)s in a %(backend)s sandbox, '
+                'falling back to %(name)s=%(allowed_value)s' % locals())
+            warnings.warn(msg)
+        out_config[name] = allowed_value
+
+    if out_config.get('mounts', 'undefined') != 'undefined':
+        degrade_and_warn('mounts', 'undefined')
+
+    if out_config.get('network', 'undefined') != 'undefined':
+        degrade_and_warn('network', 'undefined')
+
+    if out_config.get('filesystem_writable_paths', 'all') != 'all':
+        degrade_and_warn('filesystem_writable_paths', 'all')
+
+    return out_config
 
 
 def process_mount_config(mounts, extra_mounts):
-    supported_values = ['undefined', 'isolated']
-
-    assert mounts in supported_values, \
+    assert mounts == 'undefined', \
         "'%s' is an unsupported value for 'mounts' in the 'chroot' " \
         "Mount sharing cannot be configured in this backend." % mounts
 
@@ -66,11 +87,6 @@ def process_mount_config(mounts, extra_mounts):
 
 
 def process_network_config(network):
-    # It'd be possible to implement network isolation on Linux using the
-    # clone() syscall. However, I prefer to have the 'chroot' backend behave
-    # the same on all platforms, and have separate Linux-specific backends to
-    # do Linux-specific stuff.
-
     assert network == 'undefined', \
         "'%s' is an unsupported value for 'network' in the 'chroot' backend. " \
         "Network sharing cannot be be configured in this backend." % network

@@ -33,30 +33,18 @@ class ProgramNotFound(Exception):
     pass
 
 
-def maximum_possible_isolation():
-    '''Describe the 'tightest' isolation possible with a specific backend.
+def degrade_config_for_capabilities(in_config, warn=True):
+    '''Alter settings in 'in_config' that a given backend doesn't support.
 
-    This function returns a dict, with the following keys:
+    This function is provided for users who want to be flexible about which
+    sandbox implementation they use, and who don't mind if not all of the
+    isolation that they requested is actually possible.
 
-      - mounts
-      - network
+    This is not a general purpose 'check your config' function. Any unexpected
+    keys or values in ``in_config`` will just be ignored.
 
-    Each key maps to a parameter of the run_sandbox() function, and each
-    value is a valid value for that parameter.
-
-    Example result:
-
-        {
-            'mounts': 'undefined'
-            'network': 'isolated'
-        }
-
-    You can pass the result directly to a run_sandbox() function directly,
-    using the `**` operator to turn it into keyword arguments as in the
-    following example:
-
-        isolation_settings = maximum_possible_isolation()
-        run_sandbox(root_path, ['echo', 'hello'], **isolation_settings)
+    If 'warn' is True, each change the function makes is logged using
+    warnings.warn().
 
     '''
     raise NotImplementedError()
@@ -135,14 +123,14 @@ def run_sandbox_with_redirection(command, **sandbox_config):
     raise NotImplementedError()
 
 
-def sandbox_module_for_platform():
+def executor_for_platform():
     '''Returns an execution module that will work on the current platform.'''
 
     log = logging.getLogger("sandboxlib")
 
     backend = None
 
-    if platform.uname() == 'Linux':
+    if platform.uname()[0] == 'Linux':
         log.info("Linux detected, looking for 'linux-user-chroot'.")
         try:
             program = sandboxlib.linux_user_chroot.linux_user_chroot_program()
