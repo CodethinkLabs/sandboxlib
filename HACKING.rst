@@ -18,8 +18,8 @@ Process:
 
 1. Run tests: ``sudo tox``
 2. Create and push tag: ``git tag --annotate -m "sandboxlib version 0.0.0" 0.0.0 && git push --tags``
-2. Create source distribution tarball: ``python ./setup.py sdist``
-3. Upload to PyPI: ``twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/sandboxlib-0.0.0.tar.gz``
+3. Create source distribution tarball: ``python ./setup.py sdist``
+4. Upload to PyPI: ``twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/sandboxlib-0.0.0.tar.gz``
 
 I intend to follow the `PBR Linux/Python Compatible Semantic Versioning`_
 version scheme for this library. This is based on the `semantic versioning`_
