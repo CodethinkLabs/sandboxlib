@@ -123,7 +123,7 @@ def run_sandbox_with_redirection(command, **sandbox_config):
     raise NotImplementedError()
 
 
-def sandbox_module_for_platform():
+def executor_for_platform():
     '''Returns an execution module that will work on the current platform.'''
 
     log = logging.getLogger("sandboxlib")
