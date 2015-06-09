@@ -130,7 +130,7 @@ def executor_for_platform():
 
     backend = None
 
-    if platform.uname() == 'Linux':
+    if platform.uname()[0] == 'Linux':
         log.info("Linux detected, looking for 'linux-user-chroot'.")
         try:
             program = sandboxlib.linux_user_chroot.linux_user_chroot_program()
