@@ -36,6 +36,21 @@ def sandboxlib_executor(request):
     return executor
 
 
+def test_no_output(sandboxlib_executor):
+    '''Test ignoring of stderr/stdout.
+
+    We could use run_sandbox_with_redirection() and not get the 'err' and 'out'
+    paramemter at all, but we may as well test that they are indeed None.
+
+    '''
+    exit, out, err = sandboxlib_executor.run_sandbox(
+        ['echo', 'xyzzy'], stdout=None, stderr=None)
+
+    assert exit == 0
+    assert out is None
+    assert err is None
+
+
 def test_stdout(sandboxlib_executor):
     exit, out, err = sandboxlib_executor.run_sandbox(['echo', 'xyzzy'])
 
@@ -85,7 +100,6 @@ class TestMounts(object):
         assert err.decode('unicode-escape') == ''
         assert out.decode('unicode-escape') == "/dev/shm exists"
         assert exit == 0
-
 
 
 class TestWriteablePaths(object):
@@ -182,3 +196,21 @@ class TestWriteablePaths(object):
         assert out.decode('unicode-escape') == \
             "Wrote data to /data/1/canary."
         assert exit == 0
+
+
+def test_executor_for_platform():
+    '''Simple test of backend autodetection.'''
+    executor = sandboxlib.executor_for_platform()
+    test_stdout(executor)
+
+
+def test_degrade_config_for_capabilities(sandboxlib_executor):
+    '''Simple test of adjusting configuration for a given backend.'''
+    in_config = {
+        'mounts': 'isolated',
+        'network': 'isolated',
+        'filesystem_writable_paths': ['/tmp']
+    }
+
+    out_config = sandboxlib_executor.degrade_config_for_capabilities(
+        in_config, warn=True)
