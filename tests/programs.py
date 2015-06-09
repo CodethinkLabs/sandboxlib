@@ -33,6 +33,7 @@ import py
 import pytest
 
 import subprocess
+import sys
 import tempfile
 
 
@@ -47,8 +48,13 @@ def build_c_program(source_code, output_path, compiler_args=None):
         f.write(source_code.encode('utf-8'))
         f.flush()
 
-        subprocess.check_call(
-            ['cc', '-static', f.name, '-o', str(output_path)])
+        process = subprocess.Popen(
+            ['cc', '-static', f.name, '-o', str(output_path)],
+            stderr=subprocess.PIPE)
+        process.wait()
+        if process.returncode != 0:
+            pytest.fail(
+                "Unable to compile test C program: %s" % process.stderr.read())
 
 
 @pytest.fixture(scope='session')
