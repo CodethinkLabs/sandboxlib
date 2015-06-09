@@ -75,7 +75,7 @@ Sandstorm.io
 Sandstorm.io_ aims to be a platform for running web applications on shared
 infrastructure, with individual users in mind.
 
-It uses the 'namespaces' feature of Linux. The
+It uses the 'namespaces' feature of Linux. See
 https://github.com/sandstorm-io/sandstorm for more information.
 
 Sandstorm.io_ is for a specific use case of web application sandboxing, so it
@@ -164,9 +164,9 @@ virtualisation.
 The implementation depends on Linux's KVM_ feature, plus patched versions of
 QEMU_ and Linux.
 
-.._Intel: http://www.intel.com/
-.._KVM: http://www.linux-kvm.org/page/Main_Page
-.._QEMU: https://en.wikipedia.org/wiki/QEMU
+.. _Intel: http://www.intel.com/
+.. _KVM: http://www.linux-kvm.org/page/Main_Page
+.. _QEMU: https://en.wikipedia.org/wiki/QEMU
 
 Docker
 ~~~~~~
