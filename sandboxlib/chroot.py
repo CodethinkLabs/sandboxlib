@@ -18,8 +18,8 @@
 This implements an API defined in sandboxlib/__init__.py.
 
 This backend should work on any POSIX-compliant operating system. It has been
-tested on Linux only. The calling process must be able to use the chroot()
-syscall, which is likely to require 'root' priviliges.
+tested on Linux and Mac OS X. The calling process must be able to use the
+chroot() syscall, which is likely to require 'root' priviliges.
 
 If any 'extra_mounts' are specified, there must be a working 'mount' binary in
 the host system.
@@ -86,11 +86,6 @@ def process_mount_config(mounts, extra_mounts):
 
 
 def process_network_config(network):
-    # It'd be possible to implement network isolation on Linux using the
-    # clone() syscall. However, I prefer to have the 'chroot' backend behave
-    # the same on all platforms, and have separate Linux-specific backends to
-    # do Linux-specific stuff.
-
     assert network == 'undefined', \
         "'%s' is an unsupported value for 'network' in the 'chroot' backend. " \
         "Network sharing cannot be be configured in this backend." % network
