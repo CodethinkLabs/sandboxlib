@@ -53,15 +53,16 @@ def degrade_config_for_capabilities(in_config, warn=True):
     # Currently this is all done manually... it may make sense to add something
     # in utils.py that automatically checks the config against CAPABILITIES.
     out_config = in_config.copy()
-    backend = 'chroot'
 
     def degrade_and_warn(name, allowed_value):
-        out_config[name] = allowed_value
         if warn:
+            backend = 'chroot'
+            value = out_config[name]
             msg = (
                 'Unable to set %(name)s=%(value)s in a %(backend)s sandbox, '
-                'falling back to %(name)s=%(allowed_value)s'.format(locals()))
+                'falling back to %(name)s=%(allowed_value)s' % locals())
             warnings.warn(msg)
+        out_config[name] = allowed_value
 
     if out_config.get('mounts', 'undefined') != 'undefined':
         degrade_and_warn('mounts', 'undefined')
@@ -70,7 +71,7 @@ def degrade_config_for_capabilities(in_config, warn=True):
         degrade_and_warn('network', 'undefined')
 
     if out_config.get('filesystem_writable_paths', 'all') != 'all':
-        degrade_and_warn('network', 'all')
+        degrade_and_warn('filesystem_writable_paths', 'all')
 
     return out_config
 
