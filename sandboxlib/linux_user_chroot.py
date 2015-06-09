@@ -44,7 +44,7 @@ import sandboxlib
 CAPABILITIES = {
     'network': ['isolated', 'undefined'],
     'mounts': ['isolated', 'undefined'],
-    'writable_paths': ['all', 'any'],
+    'filesystem_writable_paths': ['all', 'any'],
 }
 
 
