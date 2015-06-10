@@ -249,7 +249,9 @@ def process_writable_paths(fs_root, writable_paths):
         absolute_writable_paths = [
             os.path.join(fs_root, path.lstrip('/')) for path in writable_paths]
 
-        for d in invert_paths(os.walk(fs_root), absolute_writable_paths):
+        readonly_paths = invert_paths(
+            os.walk(fs_root), absolute_writable_paths)
+        for d in sorted(readonly_paths):
             if not os.path.islink(d):
                 rel_path = '/' + os.path.relpath(d, fs_root)
                 extra_linux_user_chroot_args.extend(
