@@ -27,6 +27,7 @@ import os
 import platform
 import pipes
 import subprocess
+import warnings
 
 
 class ProgramNotFound(Exception):
@@ -123,14 +124,52 @@ def run_sandbox_with_redirection(command, **sandbox_config):
     raise NotImplementedError()
 
 
+def get_executor(name):
+    '''Return the execution module with the given name.
+
+    KeyError is raised if the backend isn't found.
+
+    This function will, for convenience, convert '-' to '_'. This means
+    "linux-user-chroot" will return the "linux_user_chroot" backend, instead of
+    raising an error.
+
+    '''
+
+    name = name.replace('-', '_')
+
+    try:
+        executor = getattr(sandboxlib, name)
+    except AttributeError:
+        raise KeyError(
+            "%s is not a known executor in this version of 'sandboxlib'." %
+            name)
+
+    return executor
+
+
 def executor_for_platform():
-    '''Returns an execution module that will work on the current platform.'''
+    '''Returns an execution module that will work on the current platform.
+
+    The autodetection can be overridden by setting SANDBOXLIB_BACKEND in the
+    environment of the process, which can be useful for testing and debugging.
+
+    '''
 
     log = logging.getLogger("sandboxlib")
 
     backend = None
 
-    if platform.uname()[0] == 'Linux':
+    if 'SANDBOXLIB_BACKEND' in os.environ:
+        backend_name = os.environ['SANDBOXLIB_BACKEND']
+        logging.info("Got %s from SANDBOXLIB_BACKEND variable.", backend_name)
+        try:
+            backend = get_executor(backend_name)
+        except KeyError:
+            warnings.warn(
+                "SANDBOXLIB_BACKEND environment variable is set to an invalid "
+                "value %s." % backend_name)
+
+    if backend is None and platform.uname()[0] == 'Linux':
         log.info("Linux detected, looking for 'linux-user-chroot'.")
         try:
             program = sandboxlib.linux_user_chroot.linux_user_chroot_program()

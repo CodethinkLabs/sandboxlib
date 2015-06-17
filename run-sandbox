@@ -31,21 +31,6 @@ def info(message, *args):
     logging.info(message % args)
 
 
-def get_executor(name):
-    # Convert the name into a valid Python module name. This is a convenience
-    # for users just because '-' is easier to type than '_'.
-    name = name.replace('-', '_')
-
-    try:
-        executor = getattr(sandboxlib, name)
-    except AttributeError:
-        raise RuntimeError(
-            "%s is not a known executor in this version of 'sandboxlib'." %
-            name)
-
-    return executor
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Run something in a sandbox.")
 
@@ -72,7 +57,7 @@ def parse_args():
 def run():
     args = parse_args()
 
-    executor = get_executor(args.executor)
+    executor = sandboxlib.get_executor(args.executor)
 
     if sandboxlib.load.appc.is_app_container_image(args.sandbox):
         info("%s is an App Container image." % args.sandbox)
