@@ -103,7 +103,8 @@ def mount(source, path, mount_type, mount_options):
     # should do that instead.
     argv = [
         'mount', '-t', mount_type, '-o', mount_options, source, path]
-    exit, out, err = sandboxlib._run_command(argv, stdout=None, stderr=None)
+    exit, out, err = sandboxlib._run_command(
+        argv, stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE)
 
     if exit != 0:
         raise RuntimeError(
@@ -113,7 +114,8 @@ def mount(source, path, mount_type, mount_options):
 
 def unmount(path):
     argv = ['umount', path]
-    exit, out, err = sandboxlib._run_command(argv, stdout=None, stderr=None)
+    exit, out, err = sandboxlib._run_command(
+        argv, stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE)
 
     if exit != 0:
         warnings.warn("%s failed: %s" % (
