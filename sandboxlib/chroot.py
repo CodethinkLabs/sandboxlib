@@ -167,6 +167,9 @@ def run_command_in_chroot(pipe, stdout, stderr, extra_mounts, chroot_path,
         except OSError as e:
             raise RuntimeError("Unable to chroot: %s" % e)
 
+        # This is important in case 'cwd' is a relative path.
+        os.chdir('/')
+
         if cwd is not None:
             try:
                 os.chdir(cwd)
