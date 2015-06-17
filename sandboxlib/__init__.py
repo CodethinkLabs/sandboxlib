@@ -193,22 +193,29 @@ def validate_extra_mounts(extra_mounts):
     new_extra_mounts = []
 
     for mount_entry in extra_mounts:
+        if mount_entry[1] is None:
+            raise AssertionError(
+                "Mount point empty in mount entry %s" % mount_entry)
+
         if len(mount_entry) == 3:
-            new_mount_entry = list(mount_entry) + ['']
+            full_mount_entry = list(mount_entry) + ['']
         elif len(mount_entry) == 4:
-            new_mount_entry = list(mount_entry)
+            full_mount_entry = list(mount_entry)
         else:
             raise AssertionError(
                 "Invalid mount entry in 'extra_mounts': %s" % mount_entry)
 
-        if new_mount_entry[0] is None:
-            new_mount_entry[0] = ''
-            #new_mount_entry[0] = 'none'
-        if new_mount_entry[2] is None:
-            new_mount_entry[2] = ''
-        if new_mount_entry[3] is None:
-            new_mount_entry[3] = ''
-        new_extra_mounts.append(new_mount_entry)
+        # Convert all the entries to strings to prevent type errors later
+        # on. None is special cased to the empty string, as str(None) is
+        # "None". It's valid for some parameters to be '' in some cases.
+        processed_mount_entry = []
+        for item in full_mount_entry:
+            if item is None:
+                processed_mount_entry.append('')
+            else:
+                processed_mount_entry.append(str(item))
+
+        new_extra_mounts.append(processed_mount_entry)
 
     return new_extra_mounts
 
