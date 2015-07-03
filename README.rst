@@ -187,7 +187,7 @@ Open Container Specification
 
 The `Open Container Specification <http://www.opencontainers.org/>`_ is an
 effort to standardise containers. It was started more recently than the `App
-Container spec`_ and may not may not supercede it.
+Container spec`_ and may or may not supercede it.
 
 runC_ is a runtime for these containers. It is based on code from Docker.
 
@@ -209,7 +209,10 @@ Warden
 Warden_ is another Linux container runtime, developed by the `Cloud Foundry
 project <http://cloudfoundry.org/index.html>`_. It has a client/server
 architecture allowing multiple implementations of sandboxing to be mixed.
-Currently it has two backends: 'linux' and 'insecure'.
+Currently it has two backends:
+'`linux <https://github.com/cloudfoundry/warden/tree/master/warden/root/linux>`_'
+and
+'`insecure <https://github.com/cloudfoundry/warden/tree/master/warden/root/insecure>`_'.
 
 .. _Warden: https://github.com/cloudfoundry/warden
 
