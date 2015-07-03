@@ -39,11 +39,15 @@ Current backends
 Possible future backends
 ========================
 
+- runC_
 - `Security Enhanced Linux`_ (SELinux): see https://danwalsh.livejournal.com/28545.html
 - systemd-nspawn_
+- Warden_
 
+.. _runC: http://runc.io/
 .. _Security Enhanced Linux: http://selinuxproject.org/page/Main_Page
 .. _systemd-nspawn: http://www.freedesktop.org/software/systemd/man/systemd-nspawn.html
+.. _Warden: https://github.com/cloudfoundry/warden
 
 Relationship to other projects
 ==============================
@@ -178,6 +182,17 @@ of writing.
 
 .. _Docker: https://www.docker.io/
 
+Open Container Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `Open Container Specification <http://www.opencontainers.org/>`_ is an
+effort to standardise containers. It was started more recently than the `App
+Container spec`_ and may not may not supercede it.
+
+runC_ is a runtime for these containers. It is based on code from Docker.
+
+.. _runC: http://runc.io/
+
 schroot
 ~~~~~~~
 
@@ -187,6 +202,16 @@ about dynamically creating sandboxes. If schroot_ suits your needs, just
 use it directly without any abstraction layer.
 
 .. _schroot: https://launchpad.net/schroot
+
+Warden
+~~~~~~
+
+Warden_ is another Linux container runtime, developed by the `Cloud Foundry
+project <http://cloudfoundry.org/index.html>`_. It has a client/server
+architecture allowing multiple implementations of sandboxing to be mixed.
+Currently it has two backends: 'linux' and 'insecure'.
+
+.. _Warden: https://github.com/cloudfoundry/warden
 
 Python-specific Sandboxing
 --------------------------
