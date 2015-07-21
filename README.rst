@@ -193,6 +193,14 @@ runC_ is a runtime for these containers. It is based on code from Docker.
 
 .. _runC: http://runc.io/
 
+PySpaces
+~~~~~~~~
+
+PySpaces_ is a pure Python container implementation, which uses Linux
+namespaces.
+
+.. _PySpaces: https://github.com/Friz-zy/pyspaces
+
 schroot
 ~~~~~~~
 
