@@ -26,7 +26,7 @@ I intend to follow the `PBR Linux/Python Compatible Semantic Versioning`_
 version scheme for this library. This is based on the `semantic versioning`_
 and `PEP 440`_ schemes.
 
-For background on realising to the Python Package Index (PyPI), see:
+For background on releasing to the Python Package Index (PyPI), see:
 https://packaging.python.org/en/latest/distributing.html.
 
 .. _PBR: http://docs.openstack.org/developer/pbr/
