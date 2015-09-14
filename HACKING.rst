@@ -10,7 +10,8 @@ The 'sandboxlib' library uses PBR_, which makes packaging pretty easy. In
 particular, note that PBR_ will work out a version number automatically from
 Git tags.
 
-You need
+You need:
+
 - an account on PyPI with access to the 'sandboxlib' project
 - push access to https://github.com/codethinklabs/sandboxlib
 
@@ -28,6 +29,7 @@ and `PEP 440`_ schemes.
 For background on realising to the Python Package Index (PyPI), see:
 https://packaging.python.org/en/latest/distributing.html.
 
+.. _PBR: http://docs.openstack.org/developer/pbr/
 .. _PBR Linux/Python Compatible Semantic Versioning: http://docs.openstack.org/developer/pbr/semver.html
 .. _semantic versioning: http://www.semver.org/
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440/
