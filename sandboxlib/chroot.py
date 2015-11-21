@@ -147,7 +147,8 @@ def mount_all(rootfs_path, mount_info_list):
                 os.makedirs(path)
 
             mount(source, path, mount_type, mount_options)
-            mounted.append(path)
+            if not mount_options or 'remount' not in mount_options:
+                mounted.append(path)
 
         yield
     finally:
