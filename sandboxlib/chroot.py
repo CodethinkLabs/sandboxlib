@@ -101,8 +101,18 @@ def mount(source, path, mount_type, mount_options):
     # little sad. It's possible to call the libc's mount() function
     # directly from Python using the 'ctypes' library, and perhaps we
     # should do that instead.
-    argv = [
-        'mount', '-t', mount_type, '-o', mount_options, source, path]
+    def is_none(value):
+        return value in (None, 'none', '')
+
+    argv = ['mount']
+    if not is_none(mount_type):
+        argv.extend(('-t', mount_type))
+    if not is_none(mount_options):
+        argv.extend(('-o', mount_options))
+    if not is_none(source):
+        argv.append(source)
+    argv.append(path)
+
     exit, out, err = sandboxlib._run_command(
         argv, stdout=sandboxlib.CAPTURE, stderr=sandboxlib.CAPTURE)
 
