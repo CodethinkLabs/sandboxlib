@@ -100,6 +100,14 @@ def args_for_mount(mount_source, mount_target, mount_type, mount_options,
                 mount_type)
         else:
             args = ['--mount-bind', mount_source, mount_target]
+    elif mount_options and all(opt in mount_options.split(",")
+                               for opt in ("remount", "ro")):
+        if not is_none(mount_type):
+            raise AssertionError(
+                "Type cannot be specified for 'remount,ro' mounts. Got '%s'" %
+                mount_type)
+        else:
+            args = ['--mount-readonly', mount_target]
     else:
         raise AssertionError(
             "Unsupported mount type '%s' for linux-user-chroot backend." %
