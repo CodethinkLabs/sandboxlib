@@ -39,11 +39,13 @@ Current backends
 Possible future backends
 ========================
 
+- Firejail_
 - runC_
 - `Security Enhanced Linux`_ (SELinux): see https://danwalsh.livejournal.com/28545.html
 - systemd-nspawn_
 - Warden_
 
+.. _Firejail: https://github.com/netblue30/firejail/
 .. _runC: http://runc.io/
 .. _Security Enhanced Linux: http://selinuxproject.org/page/Main_Page
 .. _systemd-nspawn: http://www.freedesktop.org/software/systemd/man/systemd-nspawn.html
