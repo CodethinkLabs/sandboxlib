@@ -192,6 +192,10 @@ and management. It appears to have a much heavier footprint than 'sandboxlib',
 it is perhaps useful if you want an equivalent of 'sandboxlib' but for
 long-running containers that require ongoing management.
 
+Garden's existing Linux backend is based on code from Warden_, but there
+is `ongoing work to use runc instead
+<https://www.cloudfoundry.org/garden-and-runc/>`_.
+
 .. _Garden: https://github.com/cloudfoundry-incubator/garden
 
 Open Container Specification
