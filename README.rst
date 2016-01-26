@@ -184,6 +184,16 @@ of writing.
 
 .. _Docker: https://www.docker.io/
 
+Garden
+~~~~~~
+
+Garden_ is an abstraction layer with multiple backends for container creation
+and management. It appears to have a much heavier footprint than 'sandboxlib',
+it is perhaps useful if you want an equivalent of 'sandboxlib' but for
+long-running containers that require ongoing management.
+
+.. _Garden: https://github.com/cloudfoundry-incubator/garden
+
 Open Container Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
