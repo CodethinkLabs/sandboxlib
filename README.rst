@@ -39,12 +39,14 @@ Current backends
 Possible future backends
 ========================
 
+- Bubblewrap_
 - Firejail_
 - runC_
 - `Security Enhanced Linux`_ (SELinux): see https://danwalsh.livejournal.com/28545.html
 - systemd-nspawn_
 - Warden_
 
+.. _Bubblewrap: https://github.com/alexlarsson/bubblewrap
 .. _Firejail: https://github.com/netblue30/firejail/
 .. _runC: http://runc.io/
 .. _Security Enhanced Linux: http://selinuxproject.org/page/Main_Page
@@ -57,6 +59,19 @@ Relationship to other projects
 Sandboxing
 ----------
 
+Fakeroot / Pseudo
+~~~~~~~~~~~~~~~~~
+
+Fakeroot_ and the comparable tool Psuedo_ operate by using LD_PRELOAD_ to
+intercept filesystem operations from processes. If any of these processes
+require special privileges, it "fakes" the operation by recording it in
+a database, and rewriting query responses so that the operation appears to
+have taken place. They are widely used in operating system build tools.
+
+.. _Fakeroot: https://fakeroot.alioth.debian.org/
+.. _Pseudo: https://www.yoctoproject.org/tools-resources/projects/pseudo
+.. _LD_PRELOAD: https://stackoverflow.com/questions/426230/what-is-the-ld-preload-trick
+
 libsandbox / pysandbox
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -65,6 +80,13 @@ sandboxing, which supports intercepting syscalls, calling setrlimit(),
 and dropping certain privileges.
 
 .. _libsandbox: https://github.com/openjudge/sandbox
+
+MBox
+~~~~
+
+MBox_ implements sandboxing using LD_PRELOAD_, in a similar way to Fakeroot_.
+
+.. _MBox: https://pdos.csail.mit.edu/archive/mbox/
 
 PRoot
 ~~~~~
