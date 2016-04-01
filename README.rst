@@ -310,7 +310,7 @@ The YBD_ build tool (from Baserock_) `triggered the creation of the
 Further reading
 ---------------
 
-- `Awesome Linux Containers` <https://github.com/Friz-zy/awesome-linux-containers>_
+- `Awesome Linux Containers <https://github.com/Friz-zy/awesome-linux-containers>`_
 
 - `Sandboxing for multi-tenant applications <https://web.archive.org/web/20121129121538/http://blog.technologyofcontent.com/2011/04/sandboxing-for-multi-tenant-applications>`_ (archived)
 - `StackOverflow question "Run an untrusted C program in a sandbox in Linux that prevents it from opening files, forking, etc.? <https://stackoverflow.com/questions/4249063/run-an-untrusted-c-program-in-a-sandbox-in-linux-that-prevents-it-from-opening-f>`_
