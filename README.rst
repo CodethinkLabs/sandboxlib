@@ -249,6 +249,13 @@ use it directly without any abstraction layer.
 
 .. _schroot: https://launchpad.net/schroot
 
+userchroot
+~~~~~~~~~~~
+
+A tool with similar purpose to linux-user-chroot, but some different tradeoffs.
+
+.. _userchroot: https://github.com/bloomberg/userchroot
+
 Warden
 ~~~~~~
 
