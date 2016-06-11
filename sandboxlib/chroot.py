@@ -38,6 +38,7 @@ import multiprocessing
 import os
 import subprocess
 import warnings
+import traceback
 
 import sandboxlib
 
@@ -195,7 +196,8 @@ def run_command_in_chroot(pipe, stdout, stderr, extra_mounts, chroot_path,
         pipe.send([exit, out, err])
         result = 0
     except Exception as e:
-        pipe.send(e)
+        tb = traceback.format_exc()
+        pipe.send((e, tb))
         result = 1
     os._exit(result)
 
@@ -228,11 +230,9 @@ def run_sandbox(command, cwd=None, env=None,
         exit, out, err = pipe_parent.recv()
         return exit, out, err
     else:
-        # Note that no effort is made to pass on the original traceback, which
-        # will be within the _run_command_in_chroot() function somewhere.
-        exception = pipe_parent.recv()
-        raise exception
-
+        # Report a new exception including the traceback from the child process
+        exception, tb = pipe_parent.recv()
+        raise Exception ('Received exception from chroot, child process traceback:\n%s\n' % tb)
 
 def run_sandbox_with_redirection(command, **sandbox_config):
     exit, out, err = run_sandbox(command, **sandbox_config)
