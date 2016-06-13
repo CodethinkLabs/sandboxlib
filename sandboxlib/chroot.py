@@ -219,6 +219,15 @@ def run_sandbox(command, cwd=None, env=None,
     pipe_parent, pipe_child = multiprocessing.Pipe()
 
     with mount_all(filesystem_root, extra_mounts):
+
+        # Awful hack to ensure string-escape is loaded:
+        #
+        # this ensures that when propagating an exception back from
+        # the child process in a chroot, the required string-escape
+        # python module is already in memory and no attempt to
+        # lazy load it in the chroot is made.
+        unused = "Some Text".encode('string-escape')
+
         process = multiprocessing.Process(
             target=run_command_in_chroot,
             args=(pipe_child, stdout, stderr, extra_mounts, filesystem_root,
