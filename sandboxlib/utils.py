@@ -41,7 +41,7 @@ def find_program(program_name):
         try:
             argv = ['which', program_name]
             program_path = subprocess.check_output(argv).strip()
-        except subprocess.CalledProcessError as e:
+        except (subprocess.CalledProcessError, OSError) as e:
             logging.debug("Error searching for %s: %s", program_name, e)
             program_path = None
 
