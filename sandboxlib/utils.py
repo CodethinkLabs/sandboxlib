@@ -42,7 +42,8 @@ def find_program(program_name):
             argv = ['which', program_name]
             program_path = subprocess.check_output(argv).strip()
         except subprocess.CalledProcessError as e:
-            logging.debug("Error searching for %s: %s", program_name, e)
+            log = logging.getLogger('sandboxlib')
+            log.debug("Error searching for %s: %s", program_name, e)
             program_path = None
 
     if program_path is None:
