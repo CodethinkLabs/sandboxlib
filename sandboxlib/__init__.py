@@ -161,7 +161,7 @@ def executor_for_platform():
 
     if 'SANDBOXLIB_BACKEND' in os.environ:
         backend_name = os.environ['SANDBOXLIB_BACKEND']
-        logging.info("Got %s from SANDBOXLIB_BACKEND variable.", backend_name)
+        log.info("Got %s from SANDBOXLIB_BACKEND variable.", backend_name)
         try:
             backend = get_executor(backend_name)
         except KeyError:
