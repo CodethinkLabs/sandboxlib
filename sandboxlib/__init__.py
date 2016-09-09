@@ -246,7 +246,7 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
         dev_null = None
 
     log = logging.getLogger('sandboxlib')
-    log.debug('Running: %s', argv_to_string(argv))
+    log.debug('Running: {}'.format(argv))
 
     try:
         process = subprocess.Popen(
@@ -278,6 +278,7 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
 # Executors
 import sandboxlib.chroot
 import sandboxlib.linux_user_chroot
+import sandboxlib.bubblewrap
 
 import sandboxlib.load
 import sandboxlib.utils

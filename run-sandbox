@@ -47,7 +47,7 @@ def parse_args():
         help="current working directory for COMMAND")
     parser.add_argument(
         '--executor', '-e',
-        choices=['chroot', 'linux_user_chroot', 'linux-user-chroot'],
+        choices=['chroot', 'linux_user_chroot', 'linux-user-chroot', 'bubblewrap'],
         type=str, default='chroot',
         help="which sandboxing backend to use")
 

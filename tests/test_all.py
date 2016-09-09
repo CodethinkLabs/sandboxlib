@@ -26,7 +26,7 @@ from programs import (
     session_tmpdir)
 
 
-@pytest.fixture(params=['chroot', 'linux_user_chroot'])
+@pytest.fixture(params=['chroot', 'linux_user_chroot', 'bubblewrap'])
 def sandboxlib_executor(request):
     executor = getattr(sandboxlib, request.param)
 
