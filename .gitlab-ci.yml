@@ -1,0 +1,9 @@
+before_script:
+  - apt-get update -qq && apt-get install -y -qq linux_user_chroot bubblewrap
+  - apt-get update -qq && apt-get install -y -qq python-dev python-pip
+  - pip install tox
+
+
+testing:
+  script:
+    - tox
