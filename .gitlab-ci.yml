@@ -1,6 +1,7 @@
 before_script:
+  - cat "deb http://ftp.uk.debian.org/debian/ sid main" >> /etc/apt/sources.list  
   - apt-get update -qq && apt-get install -y -qq linux-user-chroot bubblewrap
-  - apt-get update -qq && apt-get install -y -qq python-dev python-pip
+  - apt-get install -y -qq python-dev python-pip
   - pip install tox
 
 
