@@ -39,6 +39,7 @@ import os
 import subprocess
 import warnings
 import traceback
+import sys
 
 import sandboxlib
 
@@ -110,8 +111,11 @@ def mount(source, path, mount_type, mount_options):
         argv.extend(('-t', mount_type))
     if not is_none(mount_options):
         argv.extend(('-o', mount_options))
+    #If this is left empty, mount looks in fstab which will fail
     if not is_none(source):
         argv.append(source)
+    else:
+        argv.append("none")
     argv.append(path)
 
     exit, out, err = sandboxlib._run_command(
@@ -163,7 +167,7 @@ def run_command_in_chroot(pipe, stdout, stderr, extra_mounts, chroot_path,
     # because it calls os.chroot(). There's no 'unchroot()' function! After
     # chrooting, it calls sandboxlib._run_command(), which uses the
     # 'subprocess' module to exec 'command'. This means there are actually
-    # two subprocesses, which is not ideal, but it seems to be the simplest
+    # two subprocesses, which/tmp/pytest-of-root/pytest-0/test_mount_proc_chroot_0/sandbox/proc is not ideal, but it seems to be the simplest
     # implementation.
     #
     # An alternative approach would be to use the 'preexec_fn' feature of
@@ -226,7 +230,8 @@ def run_sandbox(command, cwd=None, env=None,
         # the child process in a chroot, the required string-escape
         # python module is already in memory and no attempt to
         # lazy load it in the chroot is made.
-        unused = "Some Text".encode('string-escape')
+        if sys.version_info[0] is 2:
+            unused = "Some Text".encode('string-escape')
 
         process = multiprocessing.Process(
             target=run_command_in_chroot,
