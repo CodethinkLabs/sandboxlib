@@ -18,6 +18,12 @@ This implements an API defined in sandboxlib/__init__.py.
 
 '''
 
+
+import os
+import logging
+
+import sandboxlib
+
 #FIXME copied over from `linux_user_chroot`, not sure on what is expected here.
 CAPABILITIES = {
     'network': ['isolated', 'undefined'],
@@ -33,7 +39,7 @@ def run_sandbox(command, cwd=None, env=None,
                 filesystem_root='/', filesystem_writable_paths='all',
                 mounts='undefined', extra_mounts=None,
                 network='undefined',
-                stderr=CAPTURE, stdout=CAPTURE):
+                stderr=sandboxlib.CAPTURE, stdout=sandboxlib.CAPTURE):
     '''Run 'command' in a sandboxed environment.
 
     Parameters:

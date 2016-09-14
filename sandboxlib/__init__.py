@@ -278,6 +278,7 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
 # Executors
 import sandboxlib.chroot
 import sandboxlib.linux_user_chroot
+import sandboxlib.bubblewrap
 
 import sandboxlib.load
 import sandboxlib.utils
