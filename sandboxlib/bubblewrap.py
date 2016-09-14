@@ -97,7 +97,7 @@ def run_sandbox(command, cwd=None, env=None,
         command = [command]
 
     command = [bubblewrap_program()]
-    log.warn("bwrap cmd : {".format(command))
+    log.warn("bwrap cmd : {}".format(command))
     
     extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
     
