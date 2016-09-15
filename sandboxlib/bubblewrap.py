@@ -96,26 +96,27 @@ def run_sandbox(command, cwd=None, env=None,
     if type(command) == str:
         command = [command]
 
-    command = [bubblewrap_program()]
-    log.warn("bwrap cmd : {}".format(command))
+    bwrap_command = [bubblewrap_program()]
+    log.warn("bwrap cmd : {}".format(bwrap_command))
     
     extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
     
-    command += process_network_config(network)
+    bwrap_command += process_network_config(network)
  
     if cwd is not None:
-        command.extend(['--chdir', cwd])
+        bwrap_command.extend(['--chdir', cwd])
     log.warn(command)
  
     #create_mount_points_if_missing(filesystem_root, filesystem_writable_paths)
     for w_mnt in filesystem_writable_paths:
-        command.extend(['--bind', w_mnt])
+        bwrap_command.extend(['--bind', w_mnt])
  
     create_mount_points_if_missing(filesystem_root, extra_mounts)
     for ex_mnt in extra_mounts:
-        command.extend(['--ro-bind', ex_mnt])
+        bwrap_command.extend(['--ro-bind', ex_mnt])
     
-    log.warn(command)
+    log.warn(bwrap_command)
+    argv = bwrap_command + [filesystem_root] + command
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     
     return exit, out, err
