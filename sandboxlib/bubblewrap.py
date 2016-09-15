@@ -107,7 +107,7 @@ def run_sandbox(command, cwd=None, env=None,
         command.extend(['--chdir', cwd])
     log.warn(command)
  
-    create_mount_points_if_missing(filesystem_root, filesystem_writable_paths)
+    #create_mount_points_if_missing(filesystem_root, filesystem_writable_paths)
     for w_mnt in filesystem_writable_paths:
         command.extend(['--bind', w_mnt])
  
