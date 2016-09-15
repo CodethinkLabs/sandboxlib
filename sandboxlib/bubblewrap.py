@@ -148,3 +148,15 @@ def create_mount_points_if_missing(filesystem_root, mount_info_list):
         path = os.path.join(filesystem_root, mount_point_no_slash)
         if not os.path.exists(path):
             os.makedirs(path)
+            
+def process_network_config(network):
+
+    sandboxlib.utils.check_parameter('network', network, CAPABILITIES['network'])
+
+    if network == 'isolated':
+        # This is all we need to do for network isolation
+        network_args = ['--unshare-net']
+    else:
+        network_args = []
+
+    return network_args
