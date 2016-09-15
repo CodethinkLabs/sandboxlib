@@ -117,7 +117,7 @@ def run_sandbox(command, cwd=None, env=None,
     
     log.warn(bwrap_command)
     argv = bwrap_command + [filesystem_root] + command
-    log.warn("run_command({}, {}, {}, {})"
+    print("run_command({}, {}, {}, {})"
              .format(argv, stdout, stderr, env))
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     
