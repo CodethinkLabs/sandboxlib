@@ -88,6 +88,16 @@ MBox_ implements sandboxing using LD_PRELOAD_, in a similar way to Fakeroot_.
 
 .. _MBox: https://pdos.csail.mit.edu/archive/mbox/
 
+Minijail
+~~~~~~~~
+
+Minijail_: Process sandboxing implemented using an LD_PRELOAD_ library that
+sets up seccomp_ profiles. Developed by Google and used in Chrome OS &
+Android. See also: the `LWN writeup on Minijail`_.
+
+.. _Minijail: https://www.chromium.org/chromium-os/developer-guide/chromium-os-sandboxing
+.. _LWN writeup on Minijail: https://lwn.net/Articles/700557/
+
 PRoot
 ~~~~~
 
