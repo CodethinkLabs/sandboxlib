@@ -105,7 +105,7 @@ def run_sandbox(command, cwd=None, env=None,
  
     if cwd is not None:
         bwrap_command.extend(['--chdir', cwd])
-    log.warn(command)
+    log.warn(bwrap_command)
  
     #create_mount_points_if_missing(filesystem_root, filesystem_writable_paths)
     for w_mnt in filesystem_writable_paths:
@@ -117,6 +117,8 @@ def run_sandbox(command, cwd=None, env=None,
     
     log.warn(bwrap_command)
     argv = bwrap_command + [filesystem_root] + command
+    log.warn("run_command({}, {}, {}, {})"
+             .format(argv, stdout, stderr, env))
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     
     return exit, out, err
