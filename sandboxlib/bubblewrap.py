@@ -105,20 +105,22 @@ def run_sandbox(command, cwd=None, env=None,
  
     if cwd is not None:
         bwrap_command.extend(['--chdir', cwd])
-    log.warn(bwrap_command)
  
-    #create_mount_points_if_missing(filesystem_root, filesystem_writable_paths)
-    for w_mnt in filesystem_writable_paths:
-        bwrap_command.extend(['--bind', w_mnt])
+    #FIXME the following only deals with the 'all' or [] cases currently
+    #  Also bwrap is writable by default(?) so we need to blacklist non
+    #  writable mounts instead of whitelisting these
+    bwrap_command += process_writable_paths(
+        filesystem_root, filesystem_writable_paths)
  
     create_mount_points_if_missing(filesystem_root, extra_mounts)
     for ex_mnt in extra_mounts:
-        bwrap_command.extend(['--ro-bind', ex_mnt])
+        bwrap_command.extend(['--ro-bind', ex_mnt, ex_mnt])
     
     log.warn(bwrap_command)
     argv = bwrap_command + [filesystem_root] + command
     print("run_command({}, {}, {}, {})"
              .format(argv, stdout, stderr, env))
+    #run_command(['/usr/bin/bwrap', '--bind', 'a', '--bind', 'l', '--bind', 'l', '/', 'echo', 'xyzzy'], -1, -1, None)
     exit, out, err = sandboxlib._run_command(argv, stdout, stderr, env=env)
     
     return exit, out, err
@@ -163,3 +165,18 @@ def process_network_config(network):
         network_args = []
 
     return network_args
+
+def process_writable_paths(fs_root, writable_paths):
+    if writable_paths == 'all':
+        extra_args = []
+    else:
+        if type(writable_paths) != list:
+            assert writable_paths in [None, 'none']
+            writable_paths = []
+            
+        extra_args=[]
+        for paths in writable_paths:
+            extra_args.extend(['--bind', paths, paths])
+            
+            
+    return extra_args
