@@ -87,7 +87,7 @@ def run_sandbox(command, cwd=None, env=None,
     
     log = logging.getLogger("sandboxlib")
     log.warn("In sandbox fn, args")
-    log.warn("cmd: {}, cwd: {}, env: {}, filesystem_root: {}," \
+    print("cmd: {}, cwd: {}, env: {}, filesystem_root: {}," \
              "filesystem_writable_paths: {}, mounts: {}, extra_mounts: {}, "\
              "network: {}, stderr: {}, stdout: {}".format(
                 command, cwd, env, filesystem_root, filesystem_writable_paths,
@@ -106,9 +106,6 @@ def run_sandbox(command, cwd=None, env=None,
     if cwd is not None:
         bwrap_command.extend(['--chdir', cwd])
  
-    #FIXME the following only deals with the 'all' or [] cases currently
-    #  Also bwrap is writable by default(?) so we need to blacklist non
-    #  writable mounts instead of whitelisting these
     bwrap_command += process_writable_paths(
         filesystem_root, filesystem_writable_paths)
  
@@ -117,7 +114,7 @@ def run_sandbox(command, cwd=None, env=None,
         bwrap_command.extend(['--ro-bind', ex_mnt, ex_mnt])
     
     log.warn(bwrap_command)
-    argv = bwrap_command + [filesystem_root] + command
+    argv = bwrap_command + ["--ro-bind", "/", filesystem_root] + command
     print("run_command({}, {}, {}, {})"
              .format(argv, stdout, stderr, env))
     #run_command(['/usr/bin/bwrap', '--bind', 'a', '--bind', 'l', '--bind', 'l', '/', 'echo', 'xyzzy'], -1, -1, None)
