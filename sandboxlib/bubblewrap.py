@@ -115,7 +115,14 @@ def run_sandbox(command, cwd=None, env=None,
         
         #TODO
         # How to handle type/options? Can bwrap do this?        
-        bwrap_command.extend(['--ro-bind', mnt_src, mnt_target])
+        if mnt_src is "/proc":
+            bwrap_command.extend(['--proc', '/proc'])
+        elif mnt_src is "/tmp":
+            bwrap_command.extend(['--tmpfs', '/tmp'])
+        elif mnt_src is "/dev":
+            bwrap_command.extend(['--dev', '/dev'])
+        else:
+            bwrap_command.extend(['--ro-bind', mnt_src, mnt_target])
     
     log.warn(bwrap_command)
     argv = bwrap_command + ["--ro-bind", "/", filesystem_root] + command
