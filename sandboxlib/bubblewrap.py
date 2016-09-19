@@ -97,7 +97,7 @@ def run_sandbox(command, cwd=None, env=None,
         command = [command]
 
     bwrap_command = [bubblewrap_program()]
-    log.warn("bwrap cmd : {}".format(bwrap_command))
+    print("bwrap cmd : {}".format(bwrap_command))
     
     extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
     
@@ -111,7 +111,11 @@ def run_sandbox(command, cwd=None, env=None,
  
     create_mount_points_if_missing(filesystem_root, extra_mounts)
     for ex_mnt in extra_mounts:
-        bwrap_command.extend(['--ro-bind', ex_mnt, ex_mnt])
+        mnt_src,mnt_target,mnt_type,mnt_options=ex_mnt
+        
+        #TODO
+        # How to handle type/options? Can bwrap do this?        
+        bwrap_command.extend(['--ro-bind', ex_src, ex_target])
     
     log.warn(bwrap_command)
     argv = bwrap_command + ["--ro-bind", "/", filesystem_root] + command
