@@ -96,36 +96,30 @@ def run_sandbox(command, cwd=None, env=None,
     if type(command) == str:
         command = [command]
 
+    #Bwrap full path
     bwrap_command = [bubblewrap_program()]
     print("bwrap cmd : {}".format(bwrap_command))
     
-    extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
+    
+    # Add in the root filesystem stuff first
+    bwrap_command += ["--ro-bind", filesystem_root, "/"]
+    
+    
     
     bwrap_command += process_network_config(network)
  
     if cwd is not None:
         bwrap_command.extend(['--chdir', cwd])
  
-    bwrap_command += process_writable_paths(
-        filesystem_root, filesystem_writable_paths)
- 
+    # do pre checks on mounts
+    extra_mounts = sandboxlib.validate_extra_mounts(extra_mounts)
     create_mount_points_if_missing(filesystem_root, extra_mounts)
-    for ex_mnt in extra_mounts:
-        mnt_src,mnt_target,mnt_type,mnt_options=ex_mnt
-        
-        #TODO
-        # How to handle type/options? Can bwrap do this?        
-        if mnt_src is "/proc":
-            bwrap_command.extend(['--proc', '/proc'])
-        elif mnt_src is "/tmp":
-            bwrap_command.extend(['--tmpfs', '/tmp'])
-        elif mnt_src is "/dev":
-            bwrap_command.extend(['--dev', '/dev'])
-        else:
-            bwrap_command.extend(['--ro-bind', mnt_src, mnt_target])
+
+    #Handles the ro and rw mounts
+    bwrap_command += process_mounts(filesystem_root, extra_mounts,
+                                    filesystem_writable_paths)
     
-    log.warn(bwrap_command)
-    argv = bwrap_command + ["--ro-bind", "/", filesystem_root] + command
+    argv = bwrap_command + command
     print("run_command({}, {}, {}, {})"
              .format(argv, stdout, stderr, env))
     #run_command(['/usr/bin/bwrap', '--bind', 'a', '--bind', 'l', '--bind', 'l', '/', 'echo', 'xyzzy'], -1, -1, None)
@@ -174,17 +168,60 @@ def process_network_config(network):
 
     return network_args
 
-def process_writable_paths(fs_root, writable_paths):
-    if writable_paths == 'all':
-        extra_args = []
-    else:
-        if type(writable_paths) != list:
-            assert writable_paths in [None, 'none']
-            writable_paths = []
-            
-        extra_args=[]
-        for paths in writable_paths:
-            extra_args.extend(['--bind', paths, paths])
-            
-            
+
+def process_mounts(fs_root, mounts, writable_paths):
+    '''
+    filesystem_writable_paths: defaults to 'all', which allows the command
+            to write to anywhere under 'filesystem_root' that the user of the
+            calling process could write to. Backends may accept a list of paths
+            instead of 'all', and will prevent writes to any files not under a
+            path in that whitelist. If 'none' or an empty list is passed, the
+            whole file-system will be read-only. The paths should be relative
+            to filesystem_root. This will processed /after/ extra_mounts are
+            mounted.
+    extra_mounts: a list of locations to mount inside 'rootfs_path',
+            specified as a list of tuples of (source_path, target_path, type,
+            options). The 'type' and 'options' should match what would be
+            specified in /etc/fstab, but a backends may support only a limited
+            subset of values. The 'target_path' is relative to filesystem_root
+            and will be created before mounting if it doesn't exist.
+    '''
+    
+    extra_args = []
+    
+    for ex_mnt in mounts:
+        mnt_src,mnt_target,mnt_type,mnt_options=ex_mnt
+        print("mnt '{}', '{}', '{}', '{}'".format(mnt_src,mnt_target,mnt_type,mnt_options))
+        #TODO
+        # How to handle options? Can bwrap do this?        
+        if mnt_type == "proc":
+            extra_args.extend(['--proc', mnt_target])
+        elif mnt_type == "tmpfs":
+            extra_args.extend(['--tmpfs', mnt_target])
+        #TODO what type is passed here?
+        elif mnt_src == "/dev":
+            extra_args.extend(['--dev', '/dev'])
+        else:
+            if is_mount_writable(mnt_target, writable_paths):
+                extra_args.extend(['--bind', mnt_src, mnt_target])
+            else:
+                extra_args.extend(['--ro-bind', mnt_src, mnt_target])
+    
     return extra_args
+
+                
+def is_mount_writable(mnt, writable_paths):
+    #Deal with the catch all statements first
+    if writable_paths == 'all':
+        return True
+    elif writable_paths in ['none', []]:
+        return False
+    elif type(writable_paths) is list:
+        return mnt in writable_paths
+        
+    #Default/unknown case
+    else:
+        logging.getLogger("sandboxlib").warn("Unknown [Bwrap]writable_path arg type "\
+            "given : {} type({})".format(writable_paths, type(writable_paths)))
+        
+        return False
