@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
         return 2;
     }
 
-    file = fopen(argv[0], "w");
+    file = fopen(argv[1], "w");
 
     if (file == NULL) {
         printf("Couldn't open %s for writing.", argv[1]);
