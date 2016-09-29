@@ -140,25 +140,23 @@ kexec() system call).
 
 .. _seccomp: http://man7.org/linux/man-pages/man2/seccomp.2.html
 
-xdg-app (GNOME Application Sandboxing)
+flatpak (GNOME Application Sandboxing)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The xdg-app_ project started from a desire in the GNOME_ desktop project to
+The flatpak_ project started from a desire in the GNOME_ desktop project to
 allow running 3rd-party applications with some isolation from the host system.
 Mobile platforms like Android and iOS have been doing this for some time
 already.
 
 It implements sandboxing mainly using the 'namespaces' feature of Linux.  Find
-out more about `the project <https://wiki.gnome.org/Projects/SandboxedApps>`_
-and `how the sandboxing is implemented
-<https://wiki.gnome.org/Projects/SandboxedApps/Sandbox>`_.
+out more about `the project <http://flatpak.org/>`_.
 
-xdg-app_ is for a specific use case of desktop application sandboxing, so it
+flatpak_ is for a specific use case of desktop application sandboxing, so it
 doesn't make sense for sandboxlib to wrap it. Use it directly if it suits your
 purpose!
 
 .. _GNOME: https://www.gnome.org/
-.. _xdg-app: https://github.com/alexlarsson/xdg-app
+.. _flatpak: https://github.com/flatpak/flatpak
 
 Containerisation
 ----------------
