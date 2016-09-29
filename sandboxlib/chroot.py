@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Codethink Limited
+# Copyright (C) 2015-2016  Codethink Limited
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,7 +101,10 @@ def mount(source, path, mount_type, mount_options):
     # We depend on the host system's 'mount' program here, which is a
     # little sad. It's possible to call the libc's mount() function
     # directly from Python using the 'ctypes' library, and perhaps we
-    # should do that instead.
+    # should do that instead.  The 'mount' requires that a source is
+    # given even for the special filesystems (e.g. proc, tmpfs), so we
+    # use the mount type as the source if the latter is not explicitly
+    # given.
     def is_none(value):
         return value in (None, 'none', '')
 
@@ -112,6 +115,8 @@ def mount(source, path, mount_type, mount_options):
         argv.extend(('-o', mount_options))
     if not is_none(source):
         argv.append(source)
+    else:
+        argv.append(mount_type)
     argv.append(path)
 
     exit, out, err = sandboxlib._run_command(

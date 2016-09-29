@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Codethink Limited
+# Copyright (C) 2015-2016  Codethink Limited
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ class TestWriteablePaths(object):
         bin_path.join('test-file-is-writable').chmod(0o755)
 
         data_path = sandbox_path.mkdir('data')
-        data_path.mkdir('1')
+        data_path = data_path.mkdir('1')
         data_path.join('canary').write("Please don't overwrite me.")
 
         return sandbox_path
@@ -169,10 +169,8 @@ class TestWriteablePaths(object):
         exit, out, err = sandboxlib_executor.run_sandbox(
             ['test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
-            filesystem_writable_paths='none',
-            extra_mounts=[
-                (None, '/data', 'tmpfs')
-            ])
+            filesystem_writable_paths='none'
+            )
 
         assert err.decode('unicode-escape') == ''
         assert out.decode('unicode-escape') == \
@@ -187,10 +185,8 @@ class TestWriteablePaths(object):
         exit, out, err = sandboxlib_executor.run_sandbox(
             ['test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
-            filesystem_writable_paths=['/data'],
-            extra_mounts=[
-                (None, '/data', 'tmpfs')
-            ])
+            filesystem_writable_paths=['/data']
+	    )
 
         assert err.decode('unicode-escape') == ''
         assert out.decode('unicode-escape') == \
