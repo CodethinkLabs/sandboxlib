@@ -83,7 +83,7 @@ class TestMounts(object):
 
     def test_mount_proc(self, sandboxlib_executor, mounts_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-or-directory-exists', '/proc'],
+            ['/bin/test-file-or-directory-exists', '/proc'],
             filesystem_root=str(mounts_test_sandbox),
             extra_mounts=[(None, '/proc', 'proc')])
 
@@ -93,7 +93,7 @@ class TestMounts(object):
 
     def test_mount_tmpfs(self, sandboxlib_executor, mounts_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-or-directory-exists', '/dev/shm'],
+            ['/bin/test-file-or-directory-exists', '/dev/shm'],
             filesystem_root=str(mounts_test_sandbox),
             extra_mounts=[(None, '/dev/shm', 'tmpfs')])
 
@@ -125,7 +125,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='none')
 
@@ -140,7 +140,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths=['/data/1'])
 
@@ -152,7 +152,7 @@ class TestWriteablePaths(object):
     def test_all_writable(self, sandboxlib_executor,
                           writable_paths_test_sandbox):
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='all')
 
@@ -167,7 +167,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths='none'
             )
@@ -183,7 +183,7 @@ class TestWriteablePaths(object):
             pytest.xfail("chroot backend doesn't support read-only paths.")
 
         exit, out, err = sandboxlib_executor.run_sandbox(
-            ['test-file-is-writable', '/data/1/canary'],
+            ['/bin/test-file-is-writable', '/data/1/canary'],
             filesystem_root=str(writable_paths_test_sandbox),
             filesystem_writable_paths=['/data']
 	    )
