@@ -33,6 +33,7 @@ that the sandbox contains a shell and we do some hack like running
 '''
 
 
+import sys
 import contextlib
 import multiprocessing
 import os
@@ -225,13 +226,16 @@ def run_sandbox(command, cwd=None, env=None,
 
     with mount_all(filesystem_root, extra_mounts):
 
-        # Awful hack to ensure string-escape is loaded:
+        # Awful hack to ensure string-escape/unicode-escape are loaded:
         #
         # this ensures that when propagating an exception back from
-        # the child process in a chroot, the required string-escape
-        # python module is already in memory and no attempt to
-        # lazy load it in the chroot is made.
-        unused = "Some Text".encode('string-escape')
+        # the child process in a chroot, the required string-escape/
+        # unicode-escape python modules are already in memory and no
+        # attempt to lazy load them in the chroot is made.
+        if sys.version_info.major == 2:
+            unused = "Some Text".encode('string-escape')
+        elif sys.version_info.major == 3:
+            unused = "Some Text".encode('unicode-escape')
 
         process = multiprocessing.Process(
             target=run_command_in_chroot,
