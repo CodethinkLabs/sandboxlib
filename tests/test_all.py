@@ -40,7 +40,7 @@ def test_no_output(sandboxlib_executor):
     '''Test ignoring of stderr/stdout.
 
     We could use run_sandbox_with_redirection() and not get the 'err' and 'out'
-    paramemter at all, but we may as well test that they are indeed None.
+    parameters at all, but we may as well test that they are indeed None.
 
     '''
     exit, out, err = sandboxlib_executor.run_sandbox(
@@ -50,14 +50,39 @@ def test_no_output(sandboxlib_executor):
     assert out is None
     assert err is None
 
-
-def test_stdout(sandboxlib_executor):
+def test_output(sandboxlib_executor):
     exit, out, err = sandboxlib_executor.run_sandbox(['echo', 'xyzzy'])
 
     assert exit == 0
     assert out.decode('unicode-escape') == 'xyzzy\n'
     assert err.decode('unicode-escape') == ''
 
+    exit, out, err = sandboxlib_executor.run_sandbox(
+        ['sh', '-c', 'echo xyzzy >&2; exit 11'])
+
+    assert exit == 11
+    assert out.decode('unicode-escape') == ''
+    assert err.decode('unicode-escape') == 'xyzzy\n'
+
+def test_output_redirection(sandboxlib_executor, tmpdir):
+    outlog_fp = str(tmpdir.join('outlog.txt'))
+    errlog_fp = str(tmpdir.join('errlog.txt'))
+    with open(outlog_fp, 'w') as outlog, open(errlog_fp, 'w') as errlog:
+        exit = sandboxlib_executor.run_sandbox_with_redirection(
+             ['sh', '-c', 'echo abcde; echo xyzzy >&2'],
+             stdout=outlog, stderr=errlog)
+
+    with open(outlog_fp) as outlog, open(errlog_fp) as errlog:
+        assert outlog.read() == 'abcde\n'
+        assert errlog.read() == 'xyzzy\n'
+
+    with open(outlog_fp, 'w') as outlog, open(errlog_fp, 'w') as errlog:
+        exit = sandboxlib_executor.run_sandbox_with_redirection(
+             ['sh', '-c', 'echo abcde; echo xyzzy >&2'],
+             stdout=outlog, stderr=sandboxlib.STDOUT)
+
+    with open(outlog_fp) as outlog:
+        assert outlog.read() == 'abcde\nxyzzy\n'
 
 def test_current_working_directory(sandboxlib_executor, tmpdir):
     exit, out, err = sandboxlib_executor.run_sandbox(
@@ -65,6 +90,33 @@ def test_current_working_directory(sandboxlib_executor, tmpdir):
 
     assert exit == 0
     assert out.decode('unicode-escape') == '%s\n' % str(tmpdir)
+    assert err.decode('unicode-escape') == ''
+
+def test_environment(sandboxlib_executor):
+    exit, out, err = sandboxlib_executor.run_sandbox(
+        ['env'], env={'foo': 'bar'})
+
+    assert exit == 0
+    assert out.decode('unicode-escape') == 'foo=bar\n'
+    assert err.decode('unicode-escape') == ''
+
+def test_isolated_mounts(sandboxlib_executor):
+    if sandboxlib_executor == sandboxlib.chroot:
+        pytest.skip('chroot backend does not support mounts isolation')
+    elif sandboxlib_executor == sandboxlib.linux_user_chroot:
+       # linux-user-chroot always creates a new mount namespace
+       pass
+
+def test_isolated_network(sandboxlib_executor):
+    if sandboxlib_executor == sandboxlib.chroot:
+        pytest.skip('chroot backend does not support network isolation')
+
+    exit, out, err = sandboxlib_executor.run_sandbox(
+        ['sh', '-c', 'cat /proc/net/dev | sed 1,2d | cut -f1 -d:'],
+        network='isolated')
+
+    assert exit == 0
+    assert out.decode('unicode-escape').strip() == 'lo'
     assert err.decode('unicode-escape') == ''
 
 
@@ -100,6 +152,21 @@ class TestMounts(object):
         assert err.decode('unicode-escape') == ''
         assert out.decode('unicode-escape') == "/dev/shm exists"
         assert exit == 0
+
+    def test_invalid_mount_specs(self, sandboxlib_executor):
+        with pytest.raises(AssertionError) as excinfo:
+            exit, out, err = sandboxlib_executor.run_sandbox(
+                ['true'], extra_mounts=[('proc', None, 'tmpfs')])
+
+        assert excinfo.value.message == (
+            "Mount point empty in mount entry ('proc', None, 'tmpfs')")
+
+	with pytest.raises(AssertionError) as excinfo:
+            exit, out, err = sandboxlib_executor.run_sandbox(
+                ['true'], extra_mounts=[('proc', 'tmpfs')])
+
+        assert excinfo.value.message == (
+            "Invalid mount entry in 'extra_mounts': ('proc', 'tmpfs')")
 
 
 class TestWriteablePaths(object):
@@ -197,8 +264,18 @@ class TestWriteablePaths(object):
 def test_executor_for_platform():
     '''Simple test of backend autodetection.'''
     executor = sandboxlib.executor_for_platform()
-    test_stdout(executor)
+    test_output(executor)
 
+def test_sandboxlib_backend_env_var(sandboxlib_executor):
+    executor_name = sandboxlib_executor.__name__.split('.')[-1]
+    os.environ["SANDBOXLIB_BACKEND"] = executor_name
+    executor = sandboxlib.executor_for_platform()
+    assert executor == sandboxlib_executor
+
+def test_sandboxlib_backend_env_var_unknown_executor():
+    executor = sandboxlib.executor_for_platform()
+    os.environ["SANDBOXLIB_BACKEND"] = "unknown"
+    assert executor == sandboxlib.executor_for_platform()
 
 def test_degrade_config_for_capabilities(sandboxlib_executor):
     '''Simple test of adjusting configuration for a given backend.'''
@@ -210,3 +287,12 @@ def test_degrade_config_for_capabilities(sandboxlib_executor):
 
     out_config = sandboxlib_executor.degrade_config_for_capabilities(
         in_config, warn=True)
+
+    if sandboxlib_executor == sandboxlib.chroot:
+        assert out_config == {
+            'mounts': 'undefined',
+            'network': 'undefined',
+            'filesystem_writable_paths': 'all'
+        }
+    elif sandboxlib_executor == sandboxlib.linux_user_chroot:
+        assert out_config == in_config

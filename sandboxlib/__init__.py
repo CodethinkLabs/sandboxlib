@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Codethink Limited
+# Copyright (C) 2015, 2016  Codethink Limited
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ def validate_extra_mounts(extra_mounts):
     for mount_entry in extra_mounts:
         if mount_entry[1] is None:
             raise AssertionError(
-                "Mount point empty in mount entry %s" % mount_entry)
+                "Mount point empty in mount entry %s" % str(mount_entry))
 
         if len(mount_entry) == 3:
             full_mount_entry = list(mount_entry) + ['']
@@ -203,7 +203,7 @@ def validate_extra_mounts(extra_mounts):
             full_mount_entry = list(mount_entry)
         else:
             raise AssertionError(
-                "Invalid mount entry in 'extra_mounts': %s" % mount_entry)
+                "Invalid mount entry in 'extra_mounts': %s" % str(mount_entry))
 
         # Convert all the entries to strings to prevent type errors later
         # on. None is special cased to the empty string, as str(None) is
