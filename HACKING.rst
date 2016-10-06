@@ -40,6 +40,9 @@ Running the automated test suite
 
 Use ``tox``. You'll need 'py.test', 'tox' and their dependencies available.
 
+You will also need to have installed the C library static libraries for
+-static linking (glibc-static package in Fedora).
+
 Note that a lot of the tests will be skipped or fail if you don't run as
 'root', because some of the sandboxing backends only work when you are the
 'root' user. The test suite could handle this better than it does.

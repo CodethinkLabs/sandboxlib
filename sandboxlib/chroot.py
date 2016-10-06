@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Codethink Limited
+# Copyright (C) 2015-2016  Codethink Limited
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ that the sandbox contains a shell and we do some hack like running
 '''
 
 
+import sys
 import contextlib
 import multiprocessing
 import os
@@ -101,7 +102,10 @@ def mount(source, path, mount_type, mount_options):
     # We depend on the host system's 'mount' program here, which is a
     # little sad. It's possible to call the libc's mount() function
     # directly from Python using the 'ctypes' library, and perhaps we
-    # should do that instead.
+    # should do that instead.  The 'mount' requires that a source is
+    # given even for the special filesystems (e.g. proc, tmpfs), so we
+    # use the mount type as the source if the latter is not explicitly
+    # given.
     def is_none(value):
         return value in (None, 'none', '')
 
@@ -112,6 +116,8 @@ def mount(source, path, mount_type, mount_options):
         argv.extend(('-o', mount_options))
     if not is_none(source):
         argv.append(source)
+    else:
+        argv.append(mount_type)
     argv.append(path)
 
     exit, out, err = sandboxlib._run_command(
@@ -220,13 +226,16 @@ def run_sandbox(command, cwd=None, env=None,
 
     with mount_all(filesystem_root, extra_mounts):
 
-        # Awful hack to ensure string-escape is loaded:
+        # Awful hack to ensure string-escape/unicode-escape are loaded:
         #
         # this ensures that when propagating an exception back from
-        # the child process in a chroot, the required string-escape
-        # python module is already in memory and no attempt to
-        # lazy load it in the chroot is made.
-        unused = "Some Text".encode('string-escape')
+        # the child process in a chroot, the required string-escape/
+        # unicode-escape python modules are already in memory and no
+        # attempt to lazy load them in the chroot is made.
+        if sys.version_info.major == 2:
+            unused = "Some Text".encode('string-escape')
+        elif sys.version_info.major == 3:
+            unused = "Some Text".encode('unicode-escape')
 
         process = multiprocessing.Process(
             target=run_command_in_chroot,
