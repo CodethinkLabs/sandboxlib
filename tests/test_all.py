@@ -158,15 +158,15 @@ class TestMounts(object):
             exit, out, err = sandboxlib_executor.run_sandbox(
                 ['true'], extra_mounts=[('proc', None, 'tmpfs')])
 
-        assert excinfo.value.message == (
-            "Mount point empty in mount entry ('proc', None, 'tmpfs')")
+            assert excinfo.value.message == (
+                "Mount point empty in mount entry ('proc', None, 'tmpfs')")
 
         with pytest.raises(AssertionError) as excinfo:
             exit, out, err = sandboxlib_executor.run_sandbox(
                 ['true'], extra_mounts=[('proc', 'tmpfs')])
 
-        assert excinfo.value.message == (
-            "Invalid mount entry in 'extra_mounts': ('proc', 'tmpfs')")
+            assert excinfo.value.message == (
+                "Invalid mount entry in 'extra_mounts': ('proc', 'tmpfs')")
 
 
 class TestWriteablePaths(object):
