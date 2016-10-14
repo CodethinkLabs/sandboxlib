@@ -149,6 +149,9 @@ def run_sandbox_with_redirection(command, **sandbox_config):
     # out and err will be None
     return exit
 
+def get_program():
+    return bubblewrap_program()
+
 # Non API methods below
 
 
@@ -255,14 +258,16 @@ def process_mounts(fs_root, mounts, writable_paths):
             # First is using the --dev option that mounts host /dev
             # Second is using --dev-bind for moutning a [src] to [dest]
             # while allowing device access.
-            #
+
+
             # How do we diferentiate the two?
-
-            # extra_args.extend(['--dev', mnt_target])
-
-            # Experiment to see if --dev-bind fixes permissions errors
-            log.info("Using --dev-bind instead")
-            extra_args.extend(['--dev-bind', mnt_src, mnt_target])
+            # Check if we are mounting host root to target
+            if "/" in fs_dict.keys() and fs_dict['/']['src'] == "/":
+                log.info("Using --dev to share host dev")
+                extra_args.extend(['--dev', mnt_target])
+            else:
+                log.info("Using --dev-bind for local dev")
+                extra_args.extend(['--dev-bind', mnt_src, mnt_target])
         else:
             if is_mount_writable(mnt_target, writable_paths):
                 extra_args.extend(['--bind', mnt_src, mnt_target])
