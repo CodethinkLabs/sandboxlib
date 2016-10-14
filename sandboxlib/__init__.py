@@ -23,12 +23,14 @@ docstrings that describe the different parameters.
 
 
 import logging
+import logging.config
 import os
 import platform
 import pipes
 import subprocess
 import warnings
 
+logging.config.fileConfig(os.path.join(os.path.dirname(__file__), 'logger.conf'))
 
 class ProgramNotFound(Exception):
     pass
@@ -170,13 +172,19 @@ def executor_for_platform():
                 "value %s." % backend_name)
 
     if backend is None and platform.uname()[0] == 'Linux':
-        log.info("Linux detected, looking for 'linux-user-chroot'.")
-        try:
-            program = sandboxlib.linux_user_chroot.linux_user_chroot_program()
-            log.info("Found %s, choosing 'linux_user_chroot' module.", program)
-            backend = sandboxlib.linux_user_chroot
-        except sandboxlib.ProgramNotFound as e:
-            log.debug("Did not find 'linux-user-chroot': %s", e)
+        # Not all backends may exist, so try them one by one in order of preference
+        prefered_backends = ['bubblewrap', 'linux-user-chroot']
+        for backend_name in prefered_backends:
+
+            log.info("Linux detected, looking for '{}'.".format(backend_name))
+            try:
+                executor = get_executor(backend_name)
+                program = executor.get_program()
+                log.info("Found {}, choosing '{}' module.".format(program,backend_name))
+                backend = executor
+                break
+            except sandboxlib.ProgramNotFound as e:
+                log.warn("Did not find '{}': {}".format(backend_name, e))
 
     if backend is None:
         log.info("Choosing 'chroot' sandbox module.")
@@ -187,7 +195,7 @@ def executor_for_platform():
 
 def validate_extra_mounts(extra_mounts):
     '''Validate and fill in default values for 'extra_mounts' setting.'''
-    if extra_mounts == None:
+    if extra_mounts is None:
         return []
 
     new_extra_mounts = []
@@ -220,7 +228,6 @@ def validate_extra_mounts(extra_mounts):
     return new_extra_mounts
 
 
-
 def argv_to_string(argv):
     return ' '.join(map(pipes.quote, argv))
 
@@ -246,7 +253,8 @@ def _run_command(argv, stdout, stderr, cwd=None, env=None):
         dev_null = None
 
     log = logging.getLogger('sandboxlib')
-    log.debug('Running: {}'.format(argv))
+    log.debug('Running: {} ENV: {}'.format(argv,env))
+    log.debug(cwd)
 
     try:
         process = subprocess.Popen(

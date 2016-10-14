@@ -35,18 +35,17 @@ Current backends
 - chroot: any POSIX OS, requires 'root' priviliges
 - linux-user-chroot_: Linux-only, does not require 'root', requires
   ``linux-user-chroot`` to be installed and setuid root
+- bubblewrap: Does not require 'root', requires ``bwrap`` to be installed.
 
 Possible future backends
 ========================
 
-- Bubblewrap_
 - Firejail_
 - runC_
 - `Security Enhanced Linux`_ (SELinux): see https://danwalsh.livejournal.com/28545.html
 - systemd-nspawn_
 - Warden_
 
-.. _Bubblewrap: https://github.com/alexlarsson/bubblewrap
 .. _Firejail: https://github.com/netblue30/firejail/
 .. _runC: http://runc.io/
 .. _Security Enhanced Linux: http://selinuxproject.org/page/Main_Page
