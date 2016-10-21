@@ -1,2 +1,5 @@
+.cache/*
+.eggs/*
+.tox/*
+
 *.pyc
-.*/

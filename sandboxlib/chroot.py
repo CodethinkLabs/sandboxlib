@@ -40,6 +40,7 @@ import os
 import subprocess
 import warnings
 import traceback
+import sys
 
 import sandboxlib
 
@@ -114,10 +115,11 @@ def mount(source, path, mount_type, mount_options):
         argv.extend(('-t', mount_type))
     if not is_none(mount_options):
         argv.extend(('-o', mount_options))
+    #If this is left empty, mount looks in fstab which will fail
     if not is_none(source):
         argv.append(source)
     else:
-        argv.append(mount_type)
+        argv.append("none")
     argv.append(path)
 
     exit, out, err = sandboxlib._run_command(

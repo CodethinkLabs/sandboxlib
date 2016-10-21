@@ -279,6 +279,9 @@ def create_mount_points_if_missing(filesystem_root, mount_info_list):
             os.makedirs(path)
 
 
+def get_program():
+    return linux_user_chroot_program()
+
 def linux_user_chroot_program():
     # Raises sandboxlib.ProgramNotFound if not found.
     return sandboxlib.utils.find_program('linux-user-chroot')
