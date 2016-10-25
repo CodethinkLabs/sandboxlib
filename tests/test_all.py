@@ -32,6 +32,11 @@ def sandboxlib_executor(request):
 
     if request.param == 'chroot' and os.getuid() != 0:
         pytest.skip('chroot backend can only be used by root users')
+    elif request.param == 'bubblewrap':
+        try:
+            executor.get_program()
+        except sandboxlib.ProgramNotFound:
+            pytest.skip('bubblewrap not found: not running the tests')
 
     return executor
 
